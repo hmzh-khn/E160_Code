@@ -1,14 +1,16 @@
+from E160_config import *
 import math
 from tkinter import *
 from E160_robot import *
 from PIL import Image, ImageTk
+
 
 class E160_graphics:
     
     def __init__(self, environment):
         self.environment = environment
         self.tk = Tk()
-        self.scale = 500
+        self.scale = CONFIG_WINDOW_SCALE
         self.canvas = Canvas(self.tk, width=self.environment.width*self.scale, height=self.scale* self.environment.height)
         self.tk.title("E160 - Autonomous Robot Navigation")
         self.canvas.bind("<Button-1>", self.callback)
@@ -131,7 +133,7 @@ class E160_graphics:
         desired_points = self.reverse_scale_points([float(event.x), float(event.y)], self.scale)
         robot = self.environment.robots[0]
         robot.state_des.set_state(desired_points[0],desired_points[1],0)
-        print "New desired robot state", robot.state_des.x, robot.state_des.y 
+        print("New desired robot state", robot.state_des.x, robot.state_des.y)
         
         
     def send_robot_commands(self):

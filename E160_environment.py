@@ -1,10 +1,10 @@
+from E160_config import *
 from E160_robot import *
 from E160_state import *
 from E160_wall import *
 import serial
 import time
 from xbee import XBee
-
 
 class E160_environment:
 
@@ -22,13 +22,13 @@ class E160_environment:
         self.walls.append(E160_wall([0.0, -0.5, 0.0, -1.0],"vertical"))
             
         # create vars for hardware vs simulation
-        self.robot_mode = "HARDWARE MODE"#"SIMULATION MODE"
-        self.control_mode = "MANUAL CONTROL MODE"
+        self.robot_mode = CONFIG_ROBOT_MODE
+        self.control_mode = CONFIG_CONTROL_MODE
 
         # setup xbee communication
         if (self.robot_mode == "HARDWARE MODE"):
-            self.serial_port = serial.Serial('/dev/tty.usbserial-DN01IWND', 9600)
-            print" Setting up serial port"
+            self.serial_port = serial.Serial(CONFIG_PORT, 9600)
+            print("Setting up serial port")
             try:
                 self.xbee = XBee(self.serial_port)
             except:

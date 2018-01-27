@@ -1,7 +1,9 @@
 
+from E160_config import *
 from E160_state import *
 import math
 import datetime
+
 
 class E160_robot:
 
@@ -56,7 +58,7 @@ class E160_robot:
             encoder_measurements = data[-2:]
             range_measurements = data[:-2]
             
-            print "update sensors measurements ",encoder_measurements, range_measurements
+            print("update sensors measurements ",encoder_measurements, range_measurements)
             return encoder_measurements, range_measurements
 
         
@@ -79,12 +81,35 @@ class E160_robot:
             
         elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":        
             
-            # Put student code for lab 1 control here!!!!!!
-            # Don't keep the R=0, L=0 code
-            R=0
-            L=0
+            # Lab 1 control code
+            if range_measurements[0] > 0:
+                forward_distance = range_measurements[0]
+                distance_cm = CONFIG_FORWARD_DISTANCE_CALIBRATION(forward_distance)
+            else:
+                # if voltage is 0, don't move.
+                # FOR DEBUGGING, REMOVE ASAP
+                distance_cm = CONFIG_DESIRED_DISTANCE_CM
             
-        
+            error_cm = (distance_cm - CONFIG_DESIRED_DISTANCE_CM)
+
+            if abs(error_cm) < CONFIG_ERROR_THRESHOLD_CM:
+                power = 1
+            else:
+                power = int(100*(error_cm/distance_cm))
+                
+                # sign is +1 if move forwards, -1 if backwards
+                if power != 0:
+                    sign = power/abs(power)
+                else:
+                    sign = 1
+                print('sign: ',sign)
+
+                # use max/min speeds
+                power = sign * min(power, CONFIG_MAX_POWER)
+                power = sign * max(power, CONFIG_MIN_POWER)
+
+            R = L = power
+
         return R, L
             
     def send_control(self, R, L, deltaT):
@@ -100,7 +125,7 @@ class E160_robot:
                 RDIR = 0
             else:
                 RDIR = 1
-            RPWM = int(abs(R))
+            RPWM = int(CONFIG_R_MOD_FRACTION*abs(R))
             LPWM = int(abs(L))
 
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
@@ -113,8 +138,6 @@ class E160_robot:
 
         
     def update_state(self, deltaT, state, R, L):
-        
-
         return state
         
         
