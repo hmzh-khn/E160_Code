@@ -1,2 +1,2 @@
-# E160_Code
-Code for E160 Autonomous Robotic Navigation [should not be public]
+# E160_2017
+2017 autonomous robots navigation course, without using ROS
