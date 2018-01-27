@@ -36,7 +36,7 @@ Set config for E160_robot.py
 CONFIG_R_MOD_FRACTION = 0.99
 
 
-CONFIG_ERROR_THRESHOLD_CM = 1.0
+CONFIG_ERROR_THRESHOLD_CM = 0.8
 
 
 CONFIG_MAX_POWER = 25
@@ -48,12 +48,20 @@ def CONFIG_FORWARD_DISTANCE_CALIBRATION(potential_measurement):
   return -31.546 * math.log(math.exp(-7.19)*potential_measurement)
   # old calibration with 10cm -32.05 * math.log(math.exp(-7.07)*range_measurements[0])
 
+
+"""
+Lab 1 configurations.
+"""
+CONFIG_ERROR_DISTANCE_CM = 1000000
+
+
 """ 
 Set all of the regularly altered configurations here.
 """
 
 ##### SET DESIRED STOP DISTANCE MODE HERE (for Lab 1) #####
-CONFIG_DESIRED_DISTANCE_CM = 30.0 - 4*2.54
+CONFIG_OFFSET_CM = 0.5*2.54
+CONFIG_DESIRED_DISTANCE_CM = 30.0 - CONFIG_OFFSET_CM
 
 ##### SET HARDWARE MODE HERE (Simulation or Hardware) #####
 CONFIG_ROBOT_MODE = HARDWARE_MODE

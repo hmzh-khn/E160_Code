@@ -80,15 +80,16 @@ class E160_robot:
             L = self.manual_control_left_motor
             
         elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":        
-            
+
             # Lab 1 control code
             if range_measurements[0] > 0:
                 forward_distance = range_measurements[0]
                 distance_cm = CONFIG_FORWARD_DISTANCE_CALIBRATION(forward_distance)
+                # For lab 1, update y-state to be distance from wall
+                self.state.set_state(0,distance_cm,0)
             else:
-                # if voltage is 0, don't move.
-                # FOR DEBUGGING, REMOVE ASAP
-                distance_cm = CONFIG_DESIRED_DISTANCE_CM
+                # if voltage is 0, don't move
+                power = 0
             
             error_cm = (distance_cm - CONFIG_DESIRED_DISTANCE_CM)
 
@@ -144,7 +145,8 @@ class E160_robot:
         
     def make_headers(self):
         f = open(self.file_name, 'a+')
-        f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
+        # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
+        f.write('distance from wall\n')
         f.close()
 
         
@@ -152,8 +154,9 @@ class E160_robot:
     def log_data(self):
         f = open(self.file_name, 'a+')
         
-        # edit this line to have data logging of the data you care about
-        data = [str(x) for x in [1,2,3,4,5]]
+        # log distance from wall to 2 decimal places
+        dist_from_wall_cm = round(self.state.y, 2)
+        data = [str(dist_from_wall_cm)]
         
         f.write(' '.join(data) + '\n')
         f.close()
