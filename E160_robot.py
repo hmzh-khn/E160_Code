@@ -103,7 +103,6 @@ class E160_robot:
                     sign = power/abs(power)
                 else:
                     sign = 1
-                print('sign: ',sign)
 
                 # use max/min speeds
                 power = sign * min(power, CONFIG_MAX_POWER)
