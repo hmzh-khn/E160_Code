@@ -89,6 +89,7 @@ class E160_robot:
                 self.state.set_state(0,distance_cm,0)
             else:
                 # if voltage is 0, don't move
+                distance_cm = CONFIG_ERROR_DISTANCE_CM
                 power = 0
             
             error_cm = (distance_cm - CONFIG_DESIRED_DISTANCE_CM)
@@ -96,7 +97,7 @@ class E160_robot:
             if abs(error_cm) < CONFIG_ERROR_THRESHOLD_CM:
                 power = 1
             else:
-                power = int(100*(error_cm/distance_cm))
+                power = CONFIG_PROPORTIONAL_CONSTANT*(error_cm/CONFIG_DESIRED_DISTANCE_CM)
                 
                 # sign is +1 if move forwards, -1 if backwards
                 if power != 0:
