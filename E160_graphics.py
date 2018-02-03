@@ -1,6 +1,12 @@
 from E160_config import *
 import math
-from Tkinter import *
+import sys
+# Use correct package given version of python
+if sys.version_info[0] < 3:
+    from Tkinter import *
+else:
+    from tkinter import *
+from E160_robot import *
 from E160_robot import *
 from PIL import Image, ImageTk
 
