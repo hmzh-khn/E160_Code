@@ -17,9 +17,9 @@ class E160_robot:
         #self.w = 0.1
         self.R = 0
         self.L = 0
-        self.radius = 0.147 / 2
+        self.radius = 0.14 / 2 # went from the middle of the wheel
         self.width = 2*self.radius
-        self.wheel_radius = 0.03
+        self.wheel_radius = 0.035
         self.address = address
         self.ID = self.address.encode().__str__()[-1]
         self.last_measurements = []
@@ -65,7 +65,10 @@ class E160_robot:
             
             data = update['rf_data'].decode().split(' ')[:-1]
             data = [int(x) for x in data]
-            encoder_measurements = data[-2:]
+            encoder_measurement_neg = data[-2:]
+            encoder_measurements = [int(-x) for x in encoder_measurement_neg]
+
+
             range_measurements = data[:-2]
         
         # obtain sensor measurements !!!!!! Chris
@@ -160,9 +163,22 @@ class E160_robot:
         delta_theta = 0
 
         # ****************** Additional Student Code: Start ************
+        left_encoder_measurement = encoder_measurements[0]
+        right_encoder_measurement = encoder_measurements[1]  
+        last_left_encoder_measurement = self.last_encoder_measurements[0]
+        last_right_encoder_measurement = self.last_encoder_measurements[1]
+        delta_left = left_encoder_measurement - last_left_encoder_measurement
+        delta_right = right_encoder_measurement - last_right_encoder_measurement
 
-        
-  
+        wheel_circumference = 2 * math.pi * self.wheel_radius
+
+        left_distance = (delta_left / self.encoder_resolution) * wheel_circumference
+        right_distance = (delta_right / self.encoder_resolution) * wheel_circumference
+
+        delta_s = (left_distance + right_distance) / 2
+        delta_theta = (right_distance - left_distance) / (2 * self.radius)
+
+        print(delta_s, ':', delta_theta)          
 
         # ****************** Additional Student Code: End ************
             
@@ -207,6 +223,14 @@ class E160_robot:
     def set_manual_control_motors(self, R, L):
         
         self.manual_control_right_motor = int(R*256/100)
-        self.manual_control_left_motor = int(L*256/100)                                                         
-   
+        self.manual_control_left_motor = int(L*256/100)       
+
+
+    def normalize_angle(theta):
+        '''makes the angle normal but not normal (pi/2)'''
+        out_angle = theta % (2 * math.pi)
+        if out_angle > math.pi:
+            out_angle = out_angle - 2 * math.pi
+        return out_angle
+    
 
