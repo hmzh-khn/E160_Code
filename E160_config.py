@@ -12,7 +12,7 @@ import math
 Set config for E160_environment.py
 """
 # Computer XBee port info
-CONFIG_PORT = "/dev/tty.usbserial-DN02Z6QO"
+CONFIG_PORT = "COM3"
 
 HARDWARE_MODE = "HARDWARE MODE"
 SIMULATION_MODE = "SIMULATION MODE"
@@ -25,7 +25,7 @@ AUTONOMOUS_CONTROL_MODE = "AUTONOMOUS CONTROL MODE"
 """ 
 Set config for E160_graphics.py
 """
-CONFIG_WINDOW_SCALE = 300
+CONFIG_WINDOW_SCALE = 250
 
 
 

@@ -9,13 +9,16 @@ class E160_robot:
 
     def __init__(self, environment, address, robot_id):
         self.environment = environment
-        self.state = E160_state()
-        self.state.set_state(0,0,0)
+        self.state_est = E160_state()
+        self.state_est.set_state(0,0,0)
         self.state_des = E160_state()
         self.state_des.set_state(0,0,0)
-        self.v = 0.05
-        self.w = 0.1
-        self.radius = 0.12
+        #self.v = 0.05
+        #self.w = 0.1
+        self.R = 0
+        self.L = 0
+        self.radius = 0.147 / 2
+        self.width = 2*self.radius
         self.wheel_radius = 0.03
         self.address = address
         self.ID = self.address.encode().__str__()[-1]
@@ -23,30 +26,37 @@ class E160_robot:
         self.robot_id = robot_id
         self.manual_control_left_motor = 0
         self.manual_control_right_motor = 0
-        self.file_name = 'Log/Bot' + str(self.robot_id) + '_' + datetime.datetime.now().replace(microsecond=0).__str__() + '.txt'
+        self.file_name = 'Log/Bot' + str(self.robot_id) + '_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
         self.make_headers()
+        self.encoder_resolution = 1440
+        
+        self.last_encoder_measurements = [0,0]
+        self.encoder_measurements = [0,0]
+        self.range_measurements = [0,0,0]
+        self.last_simulated_encoder_R = 0
+        self.last_simulated_encoder_L = 0
 
     def update(self, deltaT):
         
         # get sensor measurements
-        encoder_measurements, range_measurements = self.update_sensor_measurements()
+        self.encoder_measurements, self.range_measurements = self.update_sensor_measurements(deltaT)
 
         # localize
-        self.localize(encoder_measurements, range_measurements, deltaT)
+        self.state_est = self.localize(self.state_est, self.encoder_measurements, self.range_measurements)
         
         # call motion planner
         #self.motion_planner.update_plan()
         
         # determine new control signals
-        R, L = self.update_control(range_measurements)
+        self.R, self.L = self.update_control(self.range_measurements)
         
         # send the control measurements to the robot
-        self.send_control(R, L, deltaT)
+        self.send_control(self.R, self.L, deltaT)
     
+ 
     
-    def update_sensor_measurements(self):
+    def update_sensor_measurements(self, deltaT):
         
-        # send to actual robot !!!!!!!!! John
         if self.environment.robot_mode == "HARDWARE MODE":
             command = '$S @'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
@@ -57,20 +67,20 @@ class E160_robot:
             data = [int(x) for x in data]
             encoder_measurements = data[-2:]
             range_measurements = data[:-2]
-            
-            print("update sensors measurements ",encoder_measurements, range_measurements)
-            return encoder_measurements, range_measurements
-
         
         # obtain sensor measurements !!!!!! Chris
         elif self.environment.robot_mode == "SIMULATION MODE":
-            return 1,1
+            encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
+            range_measurements = [0,0,0]
         
-        return 1,1
+        return encoder_measurements, range_measurements
         
         
-    def localize(self, encoder_measurements, range_measurements, deltaT):
-        pass
+    def localize(self, state_est, encoder_measurements, range_measurements):
+        delta_s, delta_theta = self.update_odometry(encoder_measurements)
+        state_est = self.update_state(state_est, delta_s, delta_theta)
+    
+        return state_est
     
     
     def update_control(self, range_measurements):
@@ -125,20 +135,52 @@ class E160_robot:
                 RDIR = 0
             else:
                 RDIR = 1
-            RPWM = int(CONFIG_R_MOD_FRACTION*abs(R))
+            RPWM = int(abs(R))
             LPWM = int(abs(L))
 
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
             
+
+    def simulate_encoders(self, R, L, deltaT):
+        gain = 10
+        right_encoder_measurement = -int(R*gain*deltaT) + self.last_simulated_encoder_R
+        left_encoder_measurement = -int(L*gain*deltaT) + self.last_simulated_encoder_L
+        self.last_simulated_encoder_R = right_encoder_measurement
+        self.last_simulated_encoder_L = left_encoder_measurement
         
-        # simulate kinematics
-        elif self.environment.robot_mode == "SIMULATION MODE":
-            self.state = self.update_state(deltaT, self.state, R, L)
+        print "simulate_encoders", R, L, right_encoder_measurement, left_encoder_measurement
+        return [left_encoder_measurement, right_encoder_measurement]
+    
+        
+    def update_odometry(self, encoder_measurements):
+
+        delta_s = 0
+        delta_theta = 0
+
+        # ****************** Additional Student Code: Start ************
 
         
-    def update_state(self, deltaT, state, R, L):
+  
+
+        # ****************** Additional Student Code: End ************
+            
+        # keep this to return appropriate changes in distance, angle
+        return delta_s, delta_theta 
+
+    
+    
+    
+    def update_state(self, state, delta_s, delta_theta):
+        
+        # ****************** Additional Student Code: Start ************
+                     
+        
+        # ****************** Additional Student Code: End ************
+            
+        # keep this to return the updated state
         return state
+        
         
         
         
@@ -161,13 +203,7 @@ class E160_robot:
         
     def set_manual_control_motors(self, R, L):
         
-        if self.environment.robot_mode == "HARDWARE MODE":
-            self.manual_control_right_motor = int(R*256/100)
-            self.manual_control_left_motor = int(L*256/100)           
-        else:
-            self.manual_control_right_motor = float(R)/500
-            self.manual_control_left_motor = float(L)/500
-                                              
+        self.manual_control_right_motor = int(R*256/100)
+        self.manual_control_left_motor = int(L*256/100)                                                         
    
-
 
