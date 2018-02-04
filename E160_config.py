@@ -35,6 +35,10 @@ Set config for E160_graphics.py
 CONFIG_WINDOW_SCALE = 250
 
 
+##### the intervals for setting the manual velocities
+CONFIG_SCALE_RESOLUTION = 5
+
+
 
 """ 
 Set config for E160_robot.py
@@ -74,6 +78,5 @@ CONFIG_DESIRED_DISTANCE_CM = 30.0 - CONFIG_OFFSET_CM
 ##### SET HARDWARE MODE HERE (Simulation or Hardware) #####
 CONFIG_ROBOT_MODE = HARDWARE_MODE
 ##### SET CONTROL MODE HERE (Manual or Autonomous) #####
-CONFIG_CONTROL_MODE = AUTONOMOUS_CONTROL_MODE
-
+CONFIG_CONTROL_MODE = MANUAL_CONTROL_MODE
 
