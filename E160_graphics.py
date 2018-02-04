@@ -37,13 +37,16 @@ class E160_graphics:
         self.R = 0
         self.L = 0
         
+        # attempt at typing input
+        self.alpha = Entry(self.bottom_frame)
+        self.alpha.pack(side=TOP)
        
         # add motor control slider
-        self.forward_control = Scale(self.bottom_frame, from_=-100, to=100, length  = 400,label="Forward Control",tickinterval=50, orient=HORIZONTAL)
+        self.forward_control = Scale(self.bottom_frame, from_=-100, to=100, length  = 400,label="Forward Control",tickinterval=50, orient=HORIZONTAL, resolution=CONFIG_SCALE_RESOLUTION)
         self.forward_control.pack(side=LEFT)
         
         # add rotation control slider
-        self.rotate_control = Scale(self.bottom_frame, from_=-100, to=100, length  = 400,label="Rotate Control",tickinterval=50, orient=HORIZONTAL)
+        self.rotate_control = Scale(self.bottom_frame, from_=-100, to=100, length  = 400,label="Rotate Control",tickinterval=50, orient=HORIZONTAL, resolution=CONFIG_SCALE_RESOLUTION)
         self.rotate_control.pack(side=RIGHT)
         
         # add track point button
@@ -161,7 +164,9 @@ class E160_graphics:
         
         # update sliders on gui
         self.forward_control.set(0)
-        self.rotate_control.set(0)       
+        self.rotate_control.set(0)
+        self.alpha.delete(0,END)
+        self.alpha.insert(0,0)      
         self.last_forward_control = 0
         self.last_rotate_control = 0  
         self.R = 0
@@ -170,7 +175,9 @@ class E160_graphics:
     def quit(self):
         self.environment.control_mode = "MANUAL CONTROL MODE"
         self.forward_control.set(0)
-        self.rotate_control.set(0)  
+        self.rotate_control.set(0) 
+        self.alpha.delete(0,END)
+        self.alpha.insert(0,0)
         self.gui_stopped = True
         
         
@@ -183,6 +190,7 @@ class E160_graphics:
         
     def send_robot_commands(self):
         
+
         # check to see if forward slider has changed
         if abs(self.forward_control.get()-self.last_forward_control) > 0:
             self.rotate_control.set(0)       
@@ -242,7 +250,18 @@ class E160_graphics:
         
         # draw sensors
         
- 
+        # check for text input
+        try: 
+            alpha=int(self.alpha.get())
+        except:
+            alpha=0
+        print(alpha, self.alpha)
+
+        if(alpha != 0):
+            self.forward_control.set(alpha)
+
+            
+
         # update the graphics
         self.tk.update()
 

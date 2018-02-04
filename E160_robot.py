@@ -163,12 +163,17 @@ class E160_robot:
         delta_theta = 0
 
         # ****************** Additional Student Code: Start ************
+
         left_encoder_measurement = encoder_measurements[0]
         right_encoder_measurement = encoder_measurements[1]  
         last_left_encoder_measurement = self.last_encoder_measurements[0]
         last_right_encoder_measurement = self.last_encoder_measurements[1]
         delta_left = left_encoder_measurement - last_left_encoder_measurement
         delta_right = right_encoder_measurement - last_right_encoder_measurement
+
+        #cause the lab said so I like my name better
+        diffEncoder0 = delta_left
+        diffEncoder1 = delta_right
 
         wheel_circumference = 2 * math.pi * self.wheel_radius
 
@@ -178,7 +183,11 @@ class E160_robot:
         delta_s = (left_distance + right_distance) / 2
         delta_theta = (right_distance - left_distance) / (2 * self.radius)
 
-        print(delta_s, ':', delta_theta)          
+        print(delta_left , ':' , delta_right, ' -- ', delta_s, ':', delta_theta)
+
+        #set current measurements as the last for next cycle
+        self.last_encoder_measurements[0] = left_encoder_measurement
+        self.last_encoder_measurements[1] = right_encoder_measurement
 
         # ****************** Additional Student Code: End ************
             
