@@ -22,9 +22,11 @@ class E160_graphics:
         self.north_east_frame.pack(anchor = NE)
         self.north_west_frame = Frame(self.top_frame)
         self.north_west_frame.pack(anchor = NW)
-        
         self.bottom_frame = Frame(self.tk)
         self.bottom_frame.pack(side = BOTTOM)
+
+        self.typing_frame = Frame(self.bottom_frame)
+        self.typing_frame.pack(side = TOP)
 
         self.scale = CONFIG_WINDOW_SCALE
         self.canvas = Canvas(self.tk, width=self.environment.width*self.scale, height=self.scale* self.environment.height)
@@ -38,8 +40,19 @@ class E160_graphics:
         self.L = 0
         
         # attempt at typing input
-        self.alpha = Entry(self.bottom_frame)
-        self.alpha.pack(side=TOP)
+        power_text=StringVar()
+        power_text.set("Power:")
+        power_label=Label(self.typing_frame, textvariable=power_text, height=4)
+        power_label.pack(side="left")
+        self.typing_power = Entry(self.typing_frame)
+        self.typing_power.pack(side=LEFT)
+
+        alpha_text=StringVar()
+        alpha_text.set("Alpha:")
+        alpha_label=Label(self.typing_frame, textvariable=alpha_text, height=4)
+        alpha_label.pack(side="left")
+        self.typing_alpha = Entry(self.typing_frame)
+        self.typing_alpha.pack(side=RIGHT)
        
         # add motor control slider
         self.forward_control = Scale(self.bottom_frame, from_=-100, to=100, length  = 400,label="Forward Control",tickinterval=50, orient=HORIZONTAL, resolution=CONFIG_SCALE_RESOLUTION)
@@ -165,8 +178,8 @@ class E160_graphics:
         # update sliders on gui
         self.forward_control.set(0)
         self.rotate_control.set(0)
-        self.alpha.delete(0,END)
-        self.alpha.insert(0,0)      
+        self.typing_power.delete(0,END)
+        self.typing_power.insert(0,0)      
         self.last_forward_control = 0
         self.last_rotate_control = 0  
         self.R = 0
@@ -176,8 +189,8 @@ class E160_graphics:
         self.environment.control_mode = "MANUAL CONTROL MODE"
         self.forward_control.set(0)
         self.rotate_control.set(0) 
-        self.alpha.delete(0,END)
-        self.alpha.insert(0,0)
+        self.typing_power.delete(0,END)
+        self.typing_power.insert(0,0)
         self.gui_stopped = True
         
         
@@ -252,13 +265,13 @@ class E160_graphics:
         
         # check for text input
         try: 
-            alpha=int(self.alpha.get())
+            typing_power=int(self.typing_power.get())
         except:
-            alpha=0
-        print(alpha, self.alpha)
+            typing_power=0
+        print(typing_power, self.typing_power)
 
-        if(alpha != 0):
-            self.forward_control.set(alpha)
+        if(typing_power != 0):
+            self.forward_control.set(typing_power)
 
             
 
