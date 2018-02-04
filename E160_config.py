@@ -32,7 +32,7 @@ AUTONOMOUS_CONTROL_MODE = "AUTONOMOUS CONTROL MODE"
 """ 
 Set config for E160_graphics.py
 """
-CONFIG_WINDOW_SCALE = 250
+CONFIG_WINDOW_SCALE = 200
 
 
 ##### the intervals for setting the manual velocities

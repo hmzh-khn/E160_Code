@@ -36,6 +36,11 @@ class E160_robot:
         self.last_simulated_encoder_R = 0
         self.last_simulated_encoder_L = 0
 
+        self.delta_right = 0
+        self.delta_left = 0
+
+        self.first_run_flag = 1
+
     def update(self, deltaT):
         
         # get sensor measurements
@@ -168,22 +173,26 @@ class E160_robot:
         right_encoder_measurement = encoder_measurements[1]  
         last_left_encoder_measurement = self.last_encoder_measurements[0]
         last_right_encoder_measurement = self.last_encoder_measurements[1]
-        delta_left = left_encoder_measurement - last_left_encoder_measurement
-        delta_right = right_encoder_measurement - last_right_encoder_measurement
+        self.delta_left = left_encoder_measurement - last_left_encoder_measurement
+        self.delta_right = right_encoder_measurement - last_right_encoder_measurement
+
+        if self.first_run_flag:
+            self.delta_right = 0
+            self.delta_left = 0
+            self.first_run_flag = 0
 
         #cause the lab said so I like my name better
-        diffEncoder0 = delta_left
-        diffEncoder1 = delta_right
+        diffEncoder0 = self.delta_left
+        diffEncoder1 = self.delta_right
 
         wheel_circumference = 2 * math.pi * self.wheel_radius
 
-        left_distance = (delta_left / self.encoder_resolution) * wheel_circumference
-        right_distance = (delta_right / self.encoder_resolution) * wheel_circumference
+        left_distance = (self.delta_left / self.encoder_resolution) * wheel_circumference
+        right_distance = (self.delta_right / self.encoder_resolution) * wheel_circumference
 
         delta_s = (left_distance + right_distance) / 2
         delta_theta = (right_distance - left_distance) / (2 * self.radius)
 
-        print(delta_left , ':' , delta_right, ' -- ', delta_s, ':', delta_theta)
 
         #set current measurements as the last for next cycle
         self.last_encoder_measurements[0] = left_encoder_measurement
@@ -223,7 +232,7 @@ class E160_robot:
         
         # log distance from wall to 2 decimal places
         dist_from_wall_cm = round(self.state_est.y, 2)
-        data = [str(dist_from_wall_cm)]
+        data = [str(dist_from_wall_cm),str(self.delta_left),str(self.delta_right),str(self.L)]
         
         f.write(' '.join(data) + '\n')
         f.close()

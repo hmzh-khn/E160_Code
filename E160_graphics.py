@@ -268,10 +268,9 @@ class E160_graphics:
             typing_power=int(self.typing_power.get())
         except:
             typing_power=0
-        print(typing_power, self.typing_power)
 
-        if(typing_power != 0):
-            self.forward_control.set(typing_power)
+        
+        self.forward_control.set(typing_power)
 
             
 
