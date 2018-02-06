@@ -207,16 +207,21 @@ class E160_graphics:
         
 
         # check to see if forward slider has changed
-        if abs(self.forward_control.get()-self.last_forward_control) > 0:
+        delta_forward = self.forward_control.get()-self.last_forward_control
+        if abs(delta_forward) > 0:
+            ramped_delta = max(min(delta_forward,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
             self.rotate_control.set(0)       
-            self.last_forward_control = self.forward_control.get()
+            #self.last_forward_control = self.forward_control.get()
+            self.last_forward_control = self.last_forward_control + ramped_delta
             self.last_rotate_control = 0         
             self.environment.control_mode = "MANUAL CONTROL MODE"
             
             # extract what the R and L motor signals should be
-            self.R = self.forward_control.get()
-            self.L = self.forward_control.get()
-  
+            # self.R = self.forward_control.get()
+            # self.L = self.forward_control.get()
+            self.R = self.last_forward_control # last forward control is currently
+            self.L = self.last_forward_control #  this forward control...
+
         # check to see if rotate slider has changed
         elif abs(self.rotate_control.get()-self.last_rotate_control) > 0:
             self.forward_control.set(0)       
