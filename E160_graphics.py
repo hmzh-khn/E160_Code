@@ -27,6 +27,8 @@ class E160_graphics:
 
         self.typing_frame = Frame(self.bottom_frame)
         self.typing_frame.pack(side = TOP)
+        self.prev_typing_int = 0
+        self.typing_int = 0
 
         self.scale = CONFIG_WINDOW_SCALE
         self.canvas = Canvas(self.tk, width=self.environment.width*self.scale, height=self.scale* self.environment.height)
@@ -264,13 +266,16 @@ class E160_graphics:
         # draw sensors
         
         # check for text input
+        self.prev_typing_int = self.typing_int
         try: 
-            typing_power=int(self.typing_power.get())
+            self.typing_int = int(self.typing_power.get())
+            self.typing_int = min(100,self.typing_int)
+            self.typing_int = max(-100,self.typing_int)
         except:
-            typing_power=0
+            typing_int=0
 
-        
-        self.forward_control.set(typing_power)
+        if(self.prev_typing_int != self.typing_int):
+            self.forward_control.set(self.typing_int)
 
             
 
