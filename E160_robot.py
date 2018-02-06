@@ -17,9 +17,9 @@ class E160_robot:
         #self.w = 0.1
         self.R = 0
         self.L = 0
-        self.radius = 0.14 / 2 # went from the middle of the wheel
+        self.radius = 0.147 / 2
         self.width = 2*self.radius
-        self.wheel_radius = 0.035
+        self.wheel_radius = 0.03
         self.address = address
         self.ID = self.address.encode().__str__()[-1]
         self.last_measurements = []
@@ -40,6 +40,12 @@ class E160_robot:
         self.delta_left = 0
 
         self.first_run_flag = 1
+
+        # stores changes in deltaS, deltaTheta
+        self.delta_state = (0, 0)
+        self.R_motor_scaling_factor = CONFIG_R_MOTOR_SCALING_FACTOR
+        self.testing_power_L = 0
+
 
     def update(self, deltaT):
         
@@ -70,10 +76,7 @@ class E160_robot:
             
             data = update['rf_data'].decode().split(' ')[:-1]
             data = [int(x) for x in data]
-            encoder_measurement_neg = data[-2:]
-            encoder_measurements = [int(-x) for x in encoder_measurement_neg]
-
-
+            encoder_measurements = data[-2:]
             range_measurements = data[:-2]
         
         # obtain sensor measurements !!!!!! Chris
@@ -86,6 +89,7 @@ class E160_robot:
         
     def localize(self, state_est, encoder_measurements, range_measurements):
         delta_s, delta_theta = self.update_odometry(encoder_measurements)
+        self.delta_state = (delta_s, delta_theta)
         state_est = self.update_state(state_est, delta_s, delta_theta)
     
         return state_est
@@ -97,37 +101,23 @@ class E160_robot:
             R = self.manual_control_right_motor
             L = self.manual_control_left_motor
             
-        elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":        
+        elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
 
-            # Lab 1 control code
-            if range_measurements[0] > 0:
-                forward_distance = range_measurements[0]
-                distance_cm = CONFIG_FORWARD_DISTANCE_CALIBRATION(forward_distance)
-                # For lab 1, update y-state to be distance from wall
-                self.state_est.set_state(0,distance_cm,0)
+            L = self.testing_power_L
+            R = self.R_motor_scaling_factor*self.testing_power_L
+            # power = 0
+            print("power (L,R) - ", (L,R))
+
+            if CONFIG_LAB_NUMBER == 1:
+                power = self.lab1_controller(range_measurements)
+                R = L = power
+
+            elif CONFIG_LAB_NUMBER == 2:
+                # write lab2 controller
+                pass
             else:
-                # if voltage is 0, don't move
-                distance_cm = CONFIG_ERROR_DISTANCE_CM
-                power = 0
-            
-            error_cm = (distance_cm - CONFIG_DESIRED_DISTANCE_CM)
-
-            if abs(error_cm) < CONFIG_ERROR_THRESHOLD_CM:
-                power = 1
-            else:
-                power = CONFIG_PROPORTIONAL_CONSTANT*(error_cm/CONFIG_DESIRED_DISTANCE_CM)
-                
-                # sign is +1 if move forwards, -1 if backwards
-                if power != 0:
-                    sign = power/abs(power)
-                else:
-                    sign = 1
-
-                # use max/min speeds
-                power = sign * min(power, CONFIG_MAX_POWER)
-                power = sign * max(power, CONFIG_MIN_POWER)
-
-            R = L = power
+                # do nothing
+                pass
 
         return R, L
             
@@ -239,16 +229,39 @@ class E160_robot:
         
         
     def set_manual_control_motors(self, R, L):
-        
         self.manual_control_right_motor = int(R*256/100)
-        self.manual_control_left_motor = int(L*256/100)       
+        self.manual_control_left_motor = int(L*256/100)  
 
 
-    def normalize_angle(theta):
-        '''makes the angle normal but not normal (pi/2)'''
-        out_angle = theta % (2 * math.pi)
-        if out_angle > math.pi:
-            out_angle = out_angle - 2 * math.pi
-        return out_angle
-    
+    def lab1_controller(self, range_measurements):
+        # Lab 1 control code
+        if range_measurements[0] > 0:
+            forward_distance = range_measurements[0]
+            distance_cm = CONFIG_FORWARD_DISTANCE_CALIBRATION(forward_distance)
+            # For lab 1, update y-state to be distance from wall
+            self.state_est.set_state(0, distance_cm, 0)
+        else:
+            # if voltage is 0, don't move
+            distance_cm = CONFIG_ERROR_DISTANCE_CM
+            power = 0
+        
+        error_cm = (distance_cm - CONFIG_DESIRED_DISTANCE_CM)
+
+        if abs(error_cm) < CONFIG_ERROR_THRESHOLD_CM:
+            power = 1
+        else:
+            power = CONFIG_PROPORTIONAL_CONSTANT*(error_cm/CONFIG_DESIRED_DISTANCE_CM)
+            
+            # sign is +1 if move forwards, -1 if backwards
+            if power != 0:
+                sign = power/abs(power)
+            else:
+                sign = 1
+
+            # use max/min speeds
+            power = sign * min(power, CONFIG_MAX_POWER)
+            power = sign * max(power, CONFIG_MIN_POWER)
+
+                                                           
+   
 

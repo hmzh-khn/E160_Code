@@ -1,6 +1,8 @@
+"""
+E160_gui.py
 
-
-import random
+"""
+from E160_config import CONFIG_DELTA_T
 import time
 from E160_environment import *
 from E160_graphics import *
@@ -12,7 +14,7 @@ def main():
     graphics = E160_graphics(environment)
     
     # set time step size in seconds
-    deltaT = 0.1
+    deltaT = CONFIG_DELTA_T
     # loop over time
     while True:
         # update graphics, but stop the thread if user stopped the gui
@@ -27,5 +29,6 @@ def main():
     
         # maintain timing
         time.sleep(deltaT)
-            
-main()
+   
+if __name__ == "__main__":
+    main()
