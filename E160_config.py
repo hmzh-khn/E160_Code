@@ -49,6 +49,7 @@ Set config for E160_robot.py
 # accounts for right motor moving faster than left motor
 CONFIG_R_MOTOR_SCALING_FACTOR = 0.99
 
+CONFIG_RAMP_CONSTANT = 15
 
 CONFIG_ERROR_THRESHOLD_CM = 0.8
 

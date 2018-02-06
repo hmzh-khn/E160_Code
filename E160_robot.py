@@ -148,7 +148,6 @@ class E160_robot:
         self.last_simulated_encoder_R = right_encoder_measurement
         self.last_simulated_encoder_L = left_encoder_measurement
         
-        print("simulate_encoders", R, L, right_encoder_measurement, left_encoder_measurement)
         return [left_encoder_measurement, right_encoder_measurement]
     
         
@@ -163,8 +162,8 @@ class E160_robot:
         right_encoder_measurement = encoder_measurements[1]  
         last_left_encoder_measurement = self.last_encoder_measurements[0]
         last_right_encoder_measurement = self.last_encoder_measurements[1]
-        self.delta_left = left_encoder_measurement - last_left_encoder_measurement
-        self.delta_right = right_encoder_measurement - last_right_encoder_measurement
+        self.delta_left = float(left_encoder_measurement - last_left_encoder_measurement)
+        self.delta_right = float(right_encoder_measurement - last_right_encoder_measurement)    
 
         if self.first_run_flag:
             self.delta_right = 0
@@ -176,6 +175,7 @@ class E160_robot:
         diffEncoder1 = self.delta_right
 
         wheel_circumference = 2 * math.pi * self.wheel_radius
+
 
         left_distance = (self.delta_left / self.encoder_resolution) * wheel_circumference
         right_distance = (self.delta_right / self.encoder_resolution) * wheel_circumference
@@ -199,7 +199,13 @@ class E160_robot:
     def update_state(self, state, delta_s, delta_theta):
         
         # ****************** Additional Student Code: Start ************
-                     
+
+        x_new = state.x + math.cos(state.theta) * delta_s
+        y_new = state.y + math.sin(state.theta) * delta_s
+
+        theta_new = self.normalize_angle(state.theta + delta_theta)
+
+        state.set_state(x_new, y_new, theta_new)
         
         # ****************** Additional Student Code: End ************
             
@@ -263,5 +269,10 @@ class E160_robot:
             power = sign * max(power, CONFIG_MIN_POWER)
 
                                                            
-   
-
+    def normalize_angle(self, theta):
+        '''makes the angle normal but not normal (pi/2)'''
+        out_angle = theta % (2 * math.pi)
+        if out_angle > math.pi:
+            out_angle = out_angle - 2 * math.pi
+        return out_angle
+    
