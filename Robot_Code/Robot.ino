@@ -32,6 +32,12 @@ long lastLAState = 0;
 Encoder LeftWheel(ERA, ERB);
 Encoder RightWheel(ELA, ELB);
 
+int desired_right_tick = 0;
+int desired_left_tick = 0;
+
+long last_right = RightWheel.read();
+long last_left = LeftWheel.read();
+
 void setup() {
     //Begin serial monitor port
     Serial.begin(9600);
@@ -94,6 +100,10 @@ void readCommand()
   {
     readMotorCommand(motorValues, currentCommand + 1);
   } 
+  else if (currentCommand[0] == 'T')
+  {
+    readTickCommand(motorValues, currentCommand + 1)
+  }
   else if (currentCommand[0] = 'S')
   {
     sendSensorData();
@@ -121,6 +131,33 @@ void readMotorCommand(int cmd[], char *input)
       index++;
    }
 }
+
+void readTickCommand(int powers[], char *input)
+{
+   int tickTen[2] = { 0 };
+   const char s[2] = " ";
+   char *token;
+   /* get the first token */
+//   /Serial.printf( " %s\n", input );
+   token = strtok(input, s);
+   tickTen[0] = atoi(token);
+   int index = 1;
+  
+//   /* walk through other tokens */
+   while( token != NULL ) {
+      //Serial.printf( " %s\n", token ); 
+      token = strtok(NULL, s);
+      tickTen[index] = atoi(token);
+      index++;
+   }
+
+   controlTicks(powers, tickTen);
+}
+
+void encoderChange()
+
+  long leftWheel = LeftWheel.read();
+  long rightWheel = RightWheel.read();
 
 void sendSensorData()
 {

@@ -96,15 +96,19 @@ class E160_robot:
     
     
     def update_control(self, range_measurements):
-        
+    
+        old_L = L
+        old_R = R
         if self.environment.control_mode == "MANUAL CONTROL MODE":
             R = self.manual_control_right_motor
             L = self.manual_control_left_motor
+            L, R = rampSpeed(L, R, old_L, old_R)
             
         elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
 
             L = self.testing_power_L
             R = self.R_motor_scaling_factor*self.testing_power_L
+            L, R = rampSpeed(L, R, old_L, old_R)
             # power = 0
             # print("power (L,R) - ", (L,R))
 
@@ -138,6 +142,8 @@ class E160_robot:
             LPWM = int(abs(L))
 
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
+            # command should have the desired tick rate per tenth of a second
+            # command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
             
 
@@ -276,3 +282,15 @@ class E160_robot:
             out_angle = out_angle - 2 * math.pi
         return out_angle
     
+    def rampSpeed(self, L ,R, old_L, old_R):
+        delta_L = L-old_L
+        delta_R = R-old_R
+        ramped_L = L
+        ramped_R = R
+        if abs(delta_L) > 0:
+            ramped_delta_L = max(min(delta_L,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
+            ramped_L = old_L = delta_L
+        if abs(delta_R) > 0:
+            ramped_delta_R = max(min(delta_R,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
+            ramped_R = old_R = delta_R
+        return ramped_L, ramped_R
