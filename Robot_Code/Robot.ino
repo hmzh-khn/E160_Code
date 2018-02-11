@@ -57,7 +57,7 @@ void setup() {
     pinMode(RightDist, INPUT);
     char c[100] = "100 1 100 1";
     // Start the encoder readings
-    encoderTimer.begin(updateEncoderState, 150000);
+    encoderTimer.begin(updateEncoderState, 20000);
 }
 
 void loop() {
