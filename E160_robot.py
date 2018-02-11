@@ -46,6 +46,8 @@ class E160_robot:
         self.R_motor_scaling_factor = CONFIG_R_MOTOR_SCALING_FACTOR
         self.testing_power_L = 0
 
+        # self.sum
+
 
     def update(self, deltaT):
         
@@ -96,21 +98,22 @@ class E160_robot:
     
     
     def update_control(self, range_measurements):
-    
-        old_L = L
-        old_R = R
+
+        old_L = self.L
+        old_R = self.R
         if self.environment.control_mode == "MANUAL CONTROL MODE":
             R = self.manual_control_right_motor
             L = self.manual_control_left_motor
-            L, R = rampSpeed(L, R, old_L, old_R)
+            L, R = self.rampSpeed(L, R, old_L, old_R)
             
         elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
 
             L = self.testing_power_L
             R = self.R_motor_scaling_factor*self.testing_power_L
-            L, R = rampSpeed(L, R, old_L, old_R)
+
+            # print("specified power (L,R) - ", (L,R))
+            L, R = self.rampSpeed(L, R, old_L, old_R)
             # power = 0
-            # print("power (L,R) - ", (L,R))
 
             if CONFIG_LAB_NUMBER == 1:
                 power = self.lab1_controller(range_measurements)
@@ -123,6 +126,7 @@ class E160_robot:
                 # do nothing
                 pass
 
+        print("power (L,R) - ", (L,R), (old_L,old_R))
         return R, L
             
     def send_control(self, R, L, deltaT):
@@ -190,7 +194,7 @@ class E160_robot:
         delta_theta = (right_distance - left_distance) / (2 * self.radius)
 
 
-        #set current measurements as the last for next cycle
+        # set current measurements as the last for next cycle
         self.last_encoder_measurements[0] = left_encoder_measurement
         self.last_encoder_measurements[1] = right_encoder_measurement
 
@@ -233,8 +237,8 @@ class E160_robot:
         f = open(self.file_name, 'a+')
         
         # log distance from wall to 2 decimal places
-        dist_from_wall_cm = round(self.state_est.y, 2)
-        data = [str(dist_from_wall_cm),str(self.delta_left),str(self.delta_right),str(self.L)]
+        alpha = round(self.R_motor_scaling_factor, 4)
+        data = [str(alpha), str(self.delta_state[1])]
         
         f.write(' '.join(data) + '\n')
         f.close()
@@ -274,7 +278,10 @@ class E160_robot:
             power = sign * min(power, CONFIG_MAX_POWER)
             power = sign * max(power, CONFIG_MIN_POWER)
 
-                                                           
+                      
+    def lab2_controller(self, range_measurements):
+        pass
+
     def normalize_angle(self, theta):
         '''makes the angle normal but not normal (pi/2)'''
         out_angle = theta % (2 * math.pi)
@@ -287,10 +294,14 @@ class E160_robot:
         delta_R = R-old_R
         ramped_L = L
         ramped_R = R
-        if abs(delta_L) > 0:
+        
+        if abs(delta_L) > 0 and L != 0 and R != 0:
             ramped_delta_L = max(min(delta_L,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
-            ramped_L = old_L = delta_L
-        if abs(delta_R) > 0:
+            ramped_L = old_L + ramped_delta_L
+        if abs(delta_R) > 0 and L != 0 and R != 0:
             ramped_delta_R = max(min(delta_R,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
-            ramped_R = old_R = delta_R
+            ramped_R = old_R + ramped_delta_R
+
+
+        # print("ramped power (L,R) - ", (ramped_L,ramped_R)) 
         return ramped_L, ramped_R
