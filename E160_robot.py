@@ -98,7 +98,7 @@ class E160_robot:
     
     
     def update_control(self, range_measurements):
-    
+
         old_L = self.L
         old_R = self.R
         if self.environment.control_mode == "MANUAL CONTROL MODE":
@@ -110,7 +110,6 @@ class E160_robot:
 
             L = self.testing_power_L
             R = self.R_motor_scaling_factor*self.testing_power_L
-
 
             # print("specified power (L,R) - ", (L,R))
             L, R = self.rampSpeed(L, R, old_L, old_R)
@@ -295,6 +294,7 @@ class E160_robot:
         delta_R = R-old_R
         ramped_L = L
         ramped_R = R
+        
         if abs(delta_L) > 0 and L != 0 and R != 0:
             ramped_delta_L = max(min(delta_L,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
             ramped_L = old_L + ramped_delta_L
@@ -305,5 +305,3 @@ class E160_robot:
 
         # print("ramped power (L,R) - ", (ramped_L,ramped_R)) 
         return ramped_L, ramped_R
-
-
