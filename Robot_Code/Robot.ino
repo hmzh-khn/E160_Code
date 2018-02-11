@@ -32,11 +32,12 @@ long lastLAState = 0;
 Encoder LeftWheel(ERA, ERB);
 Encoder RightWheel(ELA, ELB);
 
-int desired_right_tick = 0;
-int desired_left_tick = 0;
+long lastRight = RightWheel.read();
+long lastLeft = LeftWheel.read();
+long right = RightWheel.read();
+long left = LeftWheel.read();
 
-long last_right = RightWheel.read();
-long last_left = LeftWheel.read();
+IntervalTimer encoderTimer;
 
 void setup() {
     //Begin serial monitor port
@@ -55,12 +56,15 @@ void setup() {
     pinMode(LeftDist, INPUT);
     pinMode(RightDist, INPUT);
     char c[100] = "100 1 100 1";
+    // Start the encoder readings
+    encoderTimer.begin(updateEncoderState, 150000);
 }
 
 void loop() {
   // If there is an incoming reading...
   if (Serial1.available() > 0) 
   {
+    noInterrupts();
     while(Serial1.available() > 0)
     {
       char currentChar = Serial1.read();
@@ -84,6 +88,7 @@ void loop() {
          commandIndex++;
       }
     }
+    interupts();
   }
   digitalWrite(RDIR, motorValues[0]);
   digitalWrite(LDIR, motorValues[2]);
@@ -134,30 +139,49 @@ void readMotorCommand(int cmd[], char *input)
 
 void readTickCommand(int powers[], char *input)
 {
-   int tickTen[2] = { 0 };
+   int tickRates[2] = { 0 };
    const char s[2] = " ";
    char *token;
    /* get the first token */
 //   /Serial.printf( " %s\n", input );
    token = strtok(input, s);
-   tickTen[0] = atoi(token);
+   tickRates[0] = atoi(token);
    int index = 1;
   
 //   /* walk through other tokens */
    while( token != NULL ) {
       //Serial.printf( " %s\n", token ); 
       token = strtok(NULL, s);
-      tickTen[index] = atoi(token);
+      tickRates[index] = atoi(token);
       index++;
    }
 
-   controlTicks(powers, tickTen);
+   controlTicks(powers, tickRates);
 }
 
-void encoderChange()
+void updateEncoderState()
+{
+  lastLeft = left;
+  lastRight = right;
 
-  long leftWheel = LeftWheel.read();
-  long rightWheel = RightWheel.read();
+  right = RightWheel.read();
+  left = LeftWheel.read();
+}
+
+void controlTicks(int[] powers, int[] desiredTickRates)
+{
+  //Get errors
+  int powerLeft = powers[0];
+  int powerRight = powers[1];
+  int desiredRightTick = desiredTickRates[0];
+  int desiredLeftTick = desiredTickRates[1];
+  int actualRightTick = right - lastRight;
+  int actualLeftTick = left - lastLeft;
+  int errorRight = actualRightTick - desiredRightTick;
+  int errorLeft = actualLeftTick - desiredLeftTick;
+
+  //Control powers
+}
 
 void sendSensorData()
 {

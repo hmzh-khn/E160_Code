@@ -211,8 +211,8 @@ class E160_graphics:
         if abs(delta_forward) > 0:
             ramped_delta = max(min(delta_forward,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
             self.rotate_control.set(0)       
-            #self.last_forward_control = self.forward_control.get()
-            self.last_forward_control = self.last_forward_control + ramped_delta
+            self.last_forward_control = self.forward_control.get()
+            #self.last_forward_control = self.last_forward_control + ramped_delta #why did I do this in gfx/
             self.last_rotate_control = 0         
             self.environment.control_mode = "MANUAL CONTROL MODE"
             
