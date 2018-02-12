@@ -9,3 +9,7 @@ class E160_state:
         self.x = x
         self.y = y
         self.theta = theta
+
+    def __str__(self):
+      return str((self.x, self.y, self.theta))
+      

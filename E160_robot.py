@@ -19,7 +19,7 @@ class E160_robot:
         self.L = 0
         self.radius = 0.147 / 2
         self.width = 2*self.radius
-        self.wheel_radius = 0.03
+        self.wheel_radius = 0.034
         self.address = address
         self.ID = self.address.encode().__str__()[-1]
         self.last_measurements = []
@@ -47,6 +47,9 @@ class E160_robot:
         self.testing_power_L = 0
 
         # self.sum
+
+    def change_headers(self):
+        self.make_headers()
 
 
     def update(self, deltaT):
@@ -126,7 +129,7 @@ class E160_robot:
                 # do nothing
                 pass
 
-        print("power (L,R) - ", (L,R), (old_L,old_R))
+        # print("power (L,R) - ", (L,R), (old_L,old_R))
         return R, L
             
     def send_control(self, R, L, deltaT):
@@ -142,6 +145,7 @@ class E160_robot:
                 RDIR = 0
             else:
                 RDIR = 1
+            # PWM is positive 8 bit number
             RPWM = int(abs(R))
             LPWM = int(abs(L))
 
@@ -228,17 +232,18 @@ class E160_robot:
     def make_headers(self):
         f = open(self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        f.write('distance from wall\n')
+        names = ['alpha', 'dTheta', 'leftEnc', 'rightEnc', 'est_dist_traveled']
+        f.write(' '.join(names) + '\n')
         f.close()
 
         
         
     def log_data(self):
         f = open(self.file_name, 'a+')
-        
+
         # log distance from wall to 2 decimal places
         alpha = round(self.R_motor_scaling_factor, 4)
-        data = [str(alpha), str(self.delta_state[1])]
+        data = [str(alpha), str(self.delta_state[1]), str(self.delta_left), str(self.delta_right), str(self.state_est)]
         
         f.write(' '.join(data) + '\n')
         f.close()
@@ -294,7 +299,7 @@ class E160_robot:
         delta_R = R-old_R
         ramped_L = L
         ramped_R = R
-        
+
         if abs(delta_L) > 0 and L != 0 and R != 0:
             ramped_delta_L = max(min(delta_L,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
             ramped_L = old_L + ramped_delta_L
