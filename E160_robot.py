@@ -152,9 +152,9 @@ class E160_robot:
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             # command should have the desired tick rate per 20 ms
             # 256 -> 1400 per 100 ms = 280 per 20 ms
-            right_tick_rate = RDIR
-            left_tick_rate = LDIR
-            command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
+            right_tick_rate = RPWM
+            left_tick_rate = LPWM
+            #command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
             
 

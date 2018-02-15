@@ -154,5 +154,7 @@ void sendSensorData()
   strcat(message, temp);
   strcat(message, " ");
   Serial1.println(message);
+
+  Serial.println(message);
 }
 

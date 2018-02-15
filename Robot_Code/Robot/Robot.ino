@@ -15,9 +15,9 @@ const int ELA = 8;
 const int ELB = 9;
 
 /* PID control constants */
-const float Kp = 1;
-const float Ki = 1;
-const float Kd = 1;
+const float Kp = 0.5;
+const float Ki = 0;
+//const float Kd = 1;
 
 float leftTickErrorSum = 0;
 float rightTickErrorSum = 0;
@@ -79,7 +79,7 @@ void setup() {
     pinMode(FrontDist, INPUT);
     pinMode(LeftDist, INPUT);
     pinMode(RightDist, INPUT);
-    char c[100] = "100 1 100 1";
+//    char c[100] = "100 1 100 1";
     // Read the encoder state every 20 ms
     encoderTimer.begin(senseAndControl, UPDATE_PERIOD_MS * MS_TO_US);
 }
@@ -174,7 +174,7 @@ void readTickCommand(int motorCmds[], char *input) {
 
 void senseAndControl() {
   updateEncoderState();
-  controlTicks(motorValues, desiredTickRates);
+  controlTicks(motorValues);
 }
 
 void updateEncoderState() {
@@ -185,23 +185,37 @@ void updateEncoderState() {
   leftEncPosition = LeftWheel.read();
 }
 
-void controlTicks(int motorCmds[], int desiredTickRates[]) {
+void controlTicks(int motorCmds[]) {
   // Get errors
-  int powerLeft = motorCmds[3];
+  int powerLeft = motorCmds[3]; //why is this here?
   int powerRight = motorCmds[1];
-  int desiredRightTickRate = desiredTickRates[0];
-  int desiredLeftTickRate = desiredTickRates[1];
-  int actualRightTickRate = rightEncPosition - lastRightEncPosition;
-  int actualLeftTickRate = leftEncPosition - lastLeftEncPosition;
+  int desiredRightTickRate = 0; //desiredTickRates[0];
+  int desiredLeftTickRate = 0; //desiredTickRates[1];
+  int actualRightTickRate = -(rightEncPosition - lastRightEncPosition);
+  int actualLeftTickRate = -(leftEncPosition - lastLeftEncPosition);
   int errorRightTickRate = desiredRightTickRate - actualRightTickRate;
   int errorLeftTickRate = desiredLeftTickRate - actualLeftTickRate;
 
   // PI controllers for each wheel
-  leftTickErrorSum += errorLeftTickRate * UPDATE_PERIOD_SEC;
+  leftTickErrorSum += errorLeftTickRate * UPDATE_PERIOD_SEC; //why multiply by the time...?
   powerLeft += Kp*errorLeftTickRate + Ki*leftTickErrorSum;
 
   rightTickErrorSum += errorRightTickRate * UPDATE_PERIOD_SEC;
   powerRight += Kp*errorRightTickRate + Ki*rightTickErrorSum;
+
+  Serial.print(actualRightTickRate);
+  Serial.print(" R - L ");
+  Serial.println(actualLeftTickRate);
+
+  Serial.print(powerRight);
+  Serial.print(" PR - PL ");
+  Serial.println(powerLeft);
+
+  Serial.print(errorRightTickRate);
+  Serial.print(" ER - EL ");
+  Serial.println(errorLeftTickRate);
+
+  Serial.println();
 
   motorCmds[0] = signum(powerRight);
   motorCmds[1] = abs(powerRight);
