@@ -15,7 +15,7 @@ const int ELA = 8;
 const int ELB = 9;
 
 /* PID control constants */
-const float Kp = 0.5;
+const float Kp = 0.01;
 const float Ki = 0;
 //const float Kd = 1;
 
@@ -27,7 +27,7 @@ int desiredTickRates[2] = {0, 0};
 
 /* Timing Constants */
 const int LOOP_DELAY_MS = 50;
-const float UPDATE_PERIOD_SEC = 0.020;
+const float UPDATE_PERIOD_SEC = 0.20;
 const int SEC_TO_MS = 1000; // 10^3 ms per second
 const int UPDATE_PERIOD_MS = (int) (UPDATE_PERIOD_SEC * SEC_TO_MS);
 const int MS_TO_US = 1000; // 10^2 us per ms
@@ -54,14 +54,8 @@ long leftEncPosition = LeftWheel.read();
 
 IntervalTimer encoderTimer;
 
-int signum(float num) {
-  /*
-   * Signum returns 1 for positive numbers, -1 for negative numbers. Else 0.
-   */
-  if     (num > 0) return  1;
-  else if(num < 0) return -1;
-  else             return  0;
-}
+float controlRight = 0.0;
+float controlLeft = 0.0;
 
 void setup() {
     // Begin serial monitor port
@@ -187,8 +181,8 @@ void updateEncoderState() {
 
 void controlTicks(int motorCmds[]) {
   // Get errors
-  int powerLeft = motorCmds[3]; //why is this here?
-  int powerRight = motorCmds[1];
+//  int powerLeft = motorCmds[3];
+//  int powerRight = motorCmds[1];
   int desiredRightTickRate = 0; //desiredTickRates[0];
   int desiredLeftTickRate = 0; //desiredTickRates[1];
   int actualRightTickRate = -(rightEncPosition - lastRightEncPosition);
@@ -198,18 +192,18 @@ void controlTicks(int motorCmds[]) {
 
   // PI controllers for each wheel
   leftTickErrorSum += errorLeftTickRate * UPDATE_PERIOD_SEC; //why multiply by the time...?
-  powerLeft += Kp*errorLeftTickRate + Ki*leftTickErrorSum;
+  controlLeft += Kp*errorLeftTickRate + Ki*leftTickErrorSum;
 
   rightTickErrorSum += errorRightTickRate * UPDATE_PERIOD_SEC;
-  powerRight += Kp*errorRightTickRate + Ki*rightTickErrorSum;
+  controlRight += Kp*errorRightTickRate + Ki*rightTickErrorSum;
 
   Serial.print(actualRightTickRate);
   Serial.print(" R - L ");
   Serial.println(actualLeftTickRate);
 
-  Serial.print(powerRight);
+  Serial.print(controlRight);
   Serial.print(" PR - PL ");
-  Serial.println(powerLeft);
+  Serial.println(controlLeft);
 
   Serial.print(errorRightTickRate);
   Serial.print(" ER - EL ");
@@ -217,10 +211,14 @@ void controlTicks(int motorCmds[]) {
 
   Serial.println();
 
-  motorCmds[0] = signum(powerRight);
-  motorCmds[1] = abs(powerRight);
-  motorCmds[2] = signum(powerLeft);
-  motorCmds[3] = abs(powerLeft);
+  // limit range to [0, 255]
+  controlRight = max(-255, min(controlRight, 255));
+  controlLeft = max(-255, min(controlLeft, 255));
+
+  motorCmds[0] = controlRight >= 0;
+  motorCmds[1] = (int) fabs(controlRight);
+  motorCmds[2] = controlLeft >= 0;
+  motorCmds[3] = (int) fabs(controlLeft);
 }
 
 void sendSensorData() {
