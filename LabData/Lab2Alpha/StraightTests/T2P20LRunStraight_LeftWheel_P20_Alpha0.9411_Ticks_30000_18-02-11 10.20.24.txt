@@ -125,4 +125,4 @@ alpha dTheta leftEnc rightEnc
 0.9411 0.0 -244.0 -244.0
 
 Ran for  -30143.0 ticks, and deviated by theta = 0.0020184079784966802 .
-~368 +/- 1 cm
+468 +/- 1 cm

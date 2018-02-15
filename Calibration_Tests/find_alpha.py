@@ -17,10 +17,10 @@ import time
 
 IS_DEBUG = True
 
-DESIRED_POWER_PERCENT = 20
+DESIRED_POWER_PERCENT = 80
 DESIRED_POWER = DESIRED_POWER_PERCENT *(256/100)  # percentage of total power on left (slower) motor
 INIT_ALPHA = 1           # assumes identical motors
-STOP_THRESHOLD = 0.00001 # stops when change in alpha is this or smaller
+STOP_THRESHOLD = 0.0001 # stops when change in alpha is this or smaller
 MAX_TRIALS = 10000       # maximum number of trials before stops
 WINDOW_WIDTH = 10        # number of points across which to calculate mean, stdev
 INIT_LEARNING_RATE = 1.0 # how much impact should a single reading have on the next alpha
@@ -34,12 +34,11 @@ def initialize_alpha_list(init_alpha=INIT_ALPHA,
   alphas = []
 
   # make the list initialization-proof by adding values around the initial alpha
-  for i in range(WINDOW_WIDTH):
+  for _ in range(WINDOW_WIDTH):
     # draw from normal distribution with mean of INIT_ALPHA,
     #                                    stdev of 2nd root of STOP_THRESHOLD
     init_number = gauss(init_alpha, init_stdev)
     alphas.append(init_number)
-    print(i)
   alphas = alphas + (MAX_TRIALS - WINDOW_WIDTH)*[0]
 
   return alphas
@@ -63,16 +62,15 @@ def runRobot(env, graphics=None, deltaT=CONFIG_DELTA_T):
 
 # dictionary of known alpha values
 # ALPHAS_MAP = {0: 1,
-#               20: 0.94115}
+#               20: 0.94115,
+#               40: 0.97853}
 
 
 if __name__ == "__main__":
   env = E160_environment()
   graphics = E160_graphics(env)
 
-  alphas = initialize_alpha_list()
-
-  alphas = initialize_alpha_list() # general start
+  alphas = initialize_alpha_list(init_alpha=0.95172, init_stdev=1.5*STOP_THRESHOLD)
   learning_rate = INIT_LEARNING_RATE
 
   robot = env.robots[0]
@@ -102,7 +100,7 @@ if __name__ == "__main__":
     print('dTheta - ', deltaTheta) 
     print('totalTheta - ', totalTheta)
 
-    alphas[k] = learning_rate*(deltaTheta) #+ learning_rate*totalTheta + alphas[k-1]
+    alphas[k] = alphas[k-1] + learning_rate*deltaTheta #+ learning_rate*totalTheta + alphas[k-1]
 
     # calculate new statistics
     mean_alpha = mean(alphas[k:k-WINDOW_WIDTH:-1])
@@ -129,6 +127,7 @@ if __name__ == "__main__":
        break
 
   robot.testing_power_L = 0
+  runRobot(env, graphics=graphics)
   print("After ", num_trials, " updates, the alpha value is ", alphas[k])
   print("Deviated by theta =", totalTheta,".")
 

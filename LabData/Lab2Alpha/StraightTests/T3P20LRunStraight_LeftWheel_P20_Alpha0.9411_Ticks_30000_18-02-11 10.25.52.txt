@@ -127,4 +127,4 @@ alpha dTheta leftEnc rightEnc est_dist_traveled
 0.9411 0.0 -244.0 -244.0
 
 Ran for  -30061.0 ticks, and deviated by theta = 0.014128855849477834 .
-~184in * 2.64, +/1 cm, 6.5 in off from center line, 
+~184in * 2.54, +/1 cm, 6.5 in off from center line, 
