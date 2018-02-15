@@ -2,7 +2,6 @@
 #include <vector>
 #include<Encoder.h>
 
-
 const int RDIR = 11;
 const int RPWM = 10;
 const int LDIR = 18;
@@ -24,6 +23,7 @@ float leftTickErrorSum = 0;
 float rightTickErrorSum = 0;
 
 int motorValue = 0;
+int desiredTickRates[2] = {0, 0};
 
 /* Timing Constants */
 const int LOOP_DELAY_MS = 50;
@@ -107,7 +107,7 @@ void loop() {
          commandIndex++;
       }
     }
-    interupts();
+    interrupts();
   }
   digitalWrite(RDIR, motorValues[0]);
   digitalWrite(LDIR, motorValues[2]);
@@ -125,7 +125,7 @@ void readCommand() {
   } 
   else if (currentCommand[0] == 'T')
   {
-    readTickCommand(motorValues, currentCommand + 1)
+    readTickCommand(motorValues, currentCommand + 1);
   }
   else if (currentCommand[0] = 'S')
   {
@@ -154,8 +154,7 @@ void readMotorCommand(int cmd[], char *input) {
   }
 }
 
-int[2] readTickCommand(int motorCmds[], char *input) {
-  int desiredTickRates[2] = { 0, 0 };
+void readTickCommand(int motorCmds[], char *input) {
   const char s[2] = " ";
   char *token;
   /* get the first token */
@@ -171,12 +170,10 @@ int[2] readTickCommand(int motorCmds[], char *input) {
     desiredTickRates[index] = atoi(token);
     ++index;
   }
-
-  return desiredTickRates;
 }
 
 void senseAndControl() {
-  int[2] desiredTickRates = updateEncoderState();
+  updateEncoderState();
   controlTicks(motorValues, desiredTickRates);
 }
 
@@ -188,7 +185,7 @@ void updateEncoderState() {
   leftEncPosition = LeftWheel.read();
 }
 
-void controlTicks(int[] motorCmds, int[] desiredTickRates) {
+void controlTicks(int motorCmds[], int desiredTickRates[]) {
   // Get errors
   int powerLeft = motorCmds[3];
   int powerRight = motorCmds[1];
@@ -206,10 +203,10 @@ void controlTicks(int[] motorCmds, int[] desiredTickRates) {
   rightTickErrorSum += errorRightTickRate * UPDATE_PERIOD_SEC;
   powerRight += Kp*errorRightTickRate + Ki*rightTickErrorSum;
 
-  motorCmds = {signum(powerRight), 
-            abs(powerRight), 
-            signum(powerLeft), 
-            abs(powerLeft)};
+  motorCmds[0] = signum(powerRight);
+  motorCmds[1] = abs(powerRight);
+  motorCmds[2] = signum(powerLeft);
+  motorCmds[3] = abs(powerLeft);
 }
 
 void sendSensorData() {
