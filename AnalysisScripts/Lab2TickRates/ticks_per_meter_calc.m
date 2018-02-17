@@ -1,4 +1,5 @@
 %% Analysis for tick rates at powers of 20, 40, 60
+format long;
 
 % 20%
 P20 = [468 468 467.7 470.9 468.6];
@@ -22,3 +23,6 @@ T60 = [30161 30675 30084 30300 30321];
 
 tpcm60 = mean(T60)/mean(P60); % ticks per centimeter
 cmpt60 = mean(P60)/mean(T60); % centimeters per tick
+
+powers = [20,40,60]
+cmpt = [cmpt20 cmpt40 cmpt60]
