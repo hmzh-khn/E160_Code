@@ -248,8 +248,8 @@ class E160_graphics:
         self.range_sensor_var_2.set("Range 2 (m):  " + str(self.environment.robots[0].range_measurements[1]))
         self.range_sensor_var_3.set("Range 3 (m):  " + str(self.environment.robots[0].range_measurements[2]))
                 
-        self.encoder_sensor_var_0.set("Encoder 0 (m):  " + str(self.environment.robots[0].encoder_measurements[0]))
-        self.encoder_sensor_var_1.set("Encoder 1 (m):  " + str(self.environment.robots[0].encoder_measurements[1]))
+        self.encoder_sensor_var_0.set("Encoder 0 (ticks L):  " + str(self.environment.robots[0].encoder_measurements[0]))
+        self.encoder_sensor_var_1.set("Encoder 1 (ticks R):  " + str(self.environment.robots[0].encoder_measurements[1]))
 
         self.x.set("X (m):  " + str(self.environment.robots[0].state_est.x))
         self.y.set("Y (m):  " + str(self.environment.robots[0].state_est.y))

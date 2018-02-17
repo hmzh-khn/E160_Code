@@ -204,10 +204,10 @@ void controlTicks(int motorCmds[]) {
 
   // PI controllers for each wheel
   leftTickErrorSum += errorLeftTickRate * UPDATE_PERIOD_SEC;
-  controlLeft += Kp*errorLeftTickRate + Ki*leftTickErrorSum + Kpd*rightLeftProportionError;
+  controlLeft += Kp*errorLeftTickRate + Ki*leftTickErrorSum + Kpd*desiredLeftTickRate*rightLeftProportionError;
 
   rightTickErrorSum += errorRightTickRate * UPDATE_PERIOD_SEC;
-  controlRight += Kp*errorRightTickRate + Ki*rightTickErrorSum - Kpd*rightLeftProportionError;
+  controlRight += Kp*errorRightTickRate + Ki*rightTickErrorSum - Kpd*desiredRightTickRate*rightLeftProportionError;
 
 
   

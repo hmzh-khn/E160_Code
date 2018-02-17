@@ -11,5 +11,5 @@ class E160_state:
         self.theta = theta
 
     def __str__(self):
-      return str((self.x, self.y, self.theta))
+      return " ".join([str(self.x), str(self.y), str(self.theta)])
       

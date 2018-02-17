@@ -51,7 +51,7 @@ CONFIG_SCALE_RESOLUTION = 5
 Set config for E160_robot.py
 """
 # accounts for right motor moving faster than left motor
-CONFIG_R_MOTOR_SCALING_FACTOR = 0.99
+CONFIG_R_MOTOR_SCALING_FACTOR = 1
 
 CONFIG_RAMP_PERCENT_CONSTANT = 20
 CONFIG_RAMP_CONSTANT = 2.56*CONFIG_RAMP_PERCENT_CONSTANT # scale to 256 bit power
@@ -75,6 +75,22 @@ Lab 1 configurations.
 CONFIG_ERROR_DISTANCE_CM = 1000000
 CONFIG_PROPORTIONAL_CONSTANT = 100
 
+"""
+Tick maps (cm per tick)
+"""
+CONFIG_LEFT_CM_TO_TICKS_MAP = {
+  100: 0.015774603153597,
+}
+
+CONFIG_RIGHT_CM_TO_TICKS_MAP = {
+  100: 0.015774603153597,
+}
+
+
+"""
+Conversions
+"""
+CONFIG_CM_TO_M = 0.01
 
 """ 
 Set all of the regularly altered configurations here.

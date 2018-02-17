@@ -43,7 +43,7 @@ class E160_robot:
 
         # stores changes in deltaS, deltaTheta
         self.delta_state = (0, 0)
-        self.R_motor_scaling_factor = CONFIG_R_MOTOR_SCALING_FACTOR
+        # self.R_motor_scaling_factor = CONFIG_R_MOTOR_SCALING_FACTOR
         self.testing_power_L = 0
 
         # self.sum
@@ -111,8 +111,8 @@ class E160_robot:
             
         elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
 
-            L = self.testing_power_L
-            R = self.R_motor_scaling_factor*self.testing_power_L
+            L = R = self.testing_power_L
+            # R = self.R_motor_scaling_factor*self.testing_power_L
 
             # print("specified power (L,R) - ", (L,R))
             L, R = self.rampSpeed(L, R, old_L, old_R)
@@ -194,8 +194,11 @@ class E160_robot:
         wheel_circumference = 2 * math.pi * self.wheel_radius
 
 
-        left_distance = (self.delta_left / self.encoder_resolution) * wheel_circumference
-        right_distance = (self.delta_right / self.encoder_resolution) * wheel_circumference
+        # TODO: implement calibration from ticks to centimeters
+        # left_distance = (self.delta_left / self.encoder_resolution) * wheel_circumference
+        # right_distance = (self.delta_right / self.encoder_resolution) * wheel_circumference
+        left_distance  = self.delta_left  * CONFIG_CM_TO_M *  CONFIG_LEFT_CM_TO_TICKS_MAP[100]
+        right_distance = self.delta_right * CONFIG_CM_TO_M * CONFIG_RIGHT_CM_TO_TICKS_MAP[100]
 
         delta_s = (left_distance + right_distance) / 2
         delta_theta = (right_distance - left_distance) / (2 * self.radius)
@@ -235,7 +238,7 @@ class E160_robot:
     def make_headers(self):
         f = open(self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        names = ['alpha', 'dTheta', 'leftEnc', 'rightEnc', 'est_dist_traveled']
+        names = ['desired_tick_rate_L', 'desired_tick_rate_R', 'state_est_x', 'state_est_y', 'state_est_theta', 'deltaleftEnc', 'deltarightEnc']
         f.write(' '.join(names) + '\n')
         f.close()
 
@@ -245,8 +248,8 @@ class E160_robot:
         f = open(self.file_name, 'a+')
 
         # log distance from wall to 2 decimal places
-        alpha = round(self.R_motor_scaling_factor, 4)
-        data = [str(alpha), str(self.delta_state[1]), str(self.delta_left), str(self.delta_right), str(self.state_est)]
+        # alpha = round(self.R_motor_scaling_factor, 4)
+        data = [str(self.L), str(self.R), str(self.state_est), str(self.delta_left), str(self.delta_right)]
         
         f.write(' '.join(data) + '\n')
         f.close()
