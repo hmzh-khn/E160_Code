@@ -145,16 +145,16 @@ class E160_robot:
                 RDIR = 0
             else:
                 RDIR = 1
-            # PWM is positive 8 bit number
-            RPWM = int(abs(R))
-            LPWM = int(abs(L))
+            # PWM is positive 8 bit number, can change this to be floats with PI controller code.
+            RPWM = 14*(2*RDIR - 1)*int(abs(R))
+            LPWM = 14*(2*LDIR - 1)*int(abs(L))
 
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             # command should have the desired tick rate per 20 ms
             # 256 -> 1400 per 100 ms = 280 per 20 ms
             right_tick_rate = RPWM
             left_tick_rate = LPWM
-            #command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
+            command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
             
 

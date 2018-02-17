@@ -14,20 +14,22 @@ const int ERB = 7;
 const int ELA = 8;
 const int ELB = 9;
 
+const float DEAD_ZONE_POWER = 3*(256.0/100.0);
+
 /* PID control constants */
-const float Kp = 0.01;
-const float Ki = 0;
-//const float Kd = 1;
+const float Kp = 0.1;
+const float Ki = 0.01;
+const float Kd = 1;
 
 float leftTickErrorSum = 0;
 float rightTickErrorSum = 0;
 
 int motorValue = 0;
-int desiredTickRates[2] = {0, 0};
+float desiredTickRatesPerSec[2] = {0, 0};
 
 /* Timing Constants */
 const int LOOP_DELAY_MS = 50;
-const float UPDATE_PERIOD_SEC = 0.20;
+const float UPDATE_PERIOD_SEC = 0.020;
 const int SEC_TO_MS = 1000; // 10^3 ms per second
 const int UPDATE_PERIOD_MS = (int) (UPDATE_PERIOD_SEC * SEC_TO_MS);
 const int MS_TO_US = 1000; // 10^2 us per ms
@@ -154,14 +156,14 @@ void readTickCommand(int motorCmds[], char *input) {
   /* get the first token */
   //   /Serial.printf( " %s\n", input );
   token = strtok(input, s);
-  desiredTickRates[0] = atoi(token);
+  desiredTickRatesPerSec[0] = atoi(token);
   int index = 1;
   
   //   /* walk through other tokens */
   while( token != NULL ) {
     // Serial.printf( " %s\n", token ); 
     token = strtok(NULL, s);
-    desiredTickRates[index] = atoi(token);
+    desiredTickRatesPerSec[index] = atoi(token);
     ++index;
   }
 }
@@ -183,12 +185,12 @@ void controlTicks(int motorCmds[]) {
   // Get errors
 //  int powerLeft = motorCmds[3];
 //  int powerRight = motorCmds[1];
-  int desiredRightTickRate = 0; //desiredTickRates[0];
-  int desiredLeftTickRate = 0; //desiredTickRates[1];
-  int actualRightTickRate = -(rightEncPosition - lastRightEncPosition);
-  int actualLeftTickRate = -(leftEncPosition - lastLeftEncPosition);
-  int errorRightTickRate = desiredRightTickRate - actualRightTickRate;
-  int errorLeftTickRate = desiredLeftTickRate - actualLeftTickRate;
+  float desiredRightTickRate = desiredTickRatesPerSec[0] * UPDATE_PERIOD_SEC;
+  float desiredLeftTickRate = desiredTickRatesPerSec[1] * UPDATE_PERIOD_SEC;
+  float actualRightTickRate = -(rightEncPosition - lastRightEncPosition);
+  float actualLeftTickRate = -(leftEncPosition - lastLeftEncPosition);
+  float errorRightTickRate = desiredRightTickRate - actualRightTickRate;
+  float errorLeftTickRate = desiredLeftTickRate - actualLeftTickRate;
 
   // PI controllers for each wheel
   leftTickErrorSum += errorLeftTickRate * UPDATE_PERIOD_SEC; //why multiply by the time...?
@@ -200,25 +202,30 @@ void controlTicks(int motorCmds[]) {
   Serial.print(actualRightTickRate);
   Serial.print(" R - L ");
   Serial.println(actualLeftTickRate);
-
+//
   Serial.print(controlRight);
   Serial.print(" PR - PL ");
   Serial.println(controlLeft);
 
-  Serial.print(errorRightTickRate);
-  Serial.print(" ER - EL ");
-  Serial.println(errorLeftTickRate);
+//  Serial.print(errorRightTickRate);
+//  Serial.print(" ER - EL ");
+//  Serial.println(errorLeftTickRate);
+//  Serial.println();
 
-  Serial.println();
-
-  // limit range to [0, 255]
+  // limit range to [-255, 255]
   controlRight = max(-255, min(controlRight, 255));
   controlLeft = max(-255, min(controlLeft, 255));
 
-  motorCmds[0] = controlRight >= 0;
-  motorCmds[1] = (int) fabs(controlRight);
-  motorCmds[2] = controlLeft >= 0;
-  motorCmds[3] = (int) fabs(controlLeft);
+  controlRight = (desiredRightTickRate == 0)? 0:controlRight;
+  controlLeft = (desiredLeftTickRate == 0)? 0:controlLeft;
+
+  motorCmds[0] = controlLeft >= 0;
+  motorCmds[1] = (int) fabs(controlLeft);
+  // account for dead zone
+  motorCmds[1] = (motorCmds[1] <= DEAD_ZONE_POWER)? 0:motorCmds[1];
+  motorCmds[2] = controlRight >= 0;
+  motorCmds[3] = (int) fabs(controlRight);
+  motorCmds[3] = (motorCmds[3] <= DEAD_ZONE_POWER)? 0:motorCmds[3];
 }
 
 void sendSensorData() {
