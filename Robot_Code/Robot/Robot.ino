@@ -20,6 +20,7 @@ const float DEAD_ZONE_POWER = 3*(256.0/100.0);
 const float Kp = 0.1;
 const float Ki = 0.01;
 const float Kd = 1;
+const float Kpd = 0.1;
 
 float leftTickErrorSum = 0;
 float rightTickErrorSum = 0;
@@ -192,20 +193,32 @@ void controlTicks(int motorCmds[]) {
   float errorRightTickRate = desiredRightTickRate - actualRightTickRate;
   float errorLeftTickRate = desiredLeftTickRate - actualLeftTickRate;
 
+  // maintain consistent proportions
+  float rightActualToDesiredProportion = 0;
+  float leftActualToDesiredProportion  = 0;
+  if (desiredRightTickRate*desiredLeftTickRate != 0) {
+    float rightActualToDesiredProportion = actualRightTickRate/desiredRightTickRate;
+    float leftActualToDesiredProportion  = actualLeftTickRate/desiredLeftTickRate;
+  }
+  float rightLeftProportionError = rightActualToDesiredProportion - leftActualToDesiredProportion;
+
   // PI controllers for each wheel
-  leftTickErrorSum += errorLeftTickRate * UPDATE_PERIOD_SEC; //why multiply by the time...?
-  controlLeft += Kp*errorLeftTickRate + Ki*leftTickErrorSum;
+  leftTickErrorSum += errorLeftTickRate * UPDATE_PERIOD_SEC;
+  controlLeft += Kp*errorLeftTickRate + Ki*leftTickErrorSum + Kpd*rightLeftProportionError;
 
   rightTickErrorSum += errorRightTickRate * UPDATE_PERIOD_SEC;
-  controlRight += Kp*errorRightTickRate + Ki*rightTickErrorSum;
+  controlRight += Kp*errorRightTickRate + Ki*rightTickErrorSum - Kpd*rightLeftProportionError;
 
-  Serial.print(actualRightTickRate);
-  Serial.print(" R - L ");
-  Serial.println(actualLeftTickRate);
-//
-  Serial.print(controlRight);
-  Serial.print(" PR - PL ");
-  Serial.println(controlLeft);
+
+  
+
+//   Serial.print(actualRightTickRate);
+//   Serial.print(" R - L ");
+//   Serial.println(actualLeftTickRate);
+// //
+//   Serial.print(controlRight);
+//   Serial.print(" PR - PL ");
+//   Serial.println(controlLeft);
 
 //  Serial.print(errorRightTickRate);
 //  Serial.print(" ER - EL ");
