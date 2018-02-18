@@ -111,7 +111,8 @@ class E160_robot:
             
         elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
 
-            L = R = self.testing_power_L
+            L = self.testing_power_L
+            R = self.testing_power_R
             # R = self.R_motor_scaling_factor*self.testing_power_L
 
             # print("specified power (L,R) - ", (L,R))
@@ -224,7 +225,7 @@ class E160_robot:
         y_new = state.y + math.sin(state.theta) * delta_s
 
         theta_new = self.normalize_angle(state.theta + delta_theta)
-
+        state.add_theta(delta_theta)
         state.set_state(x_new, y_new, theta_new)
         
         # ****************** Additional Student Code: End ************

@@ -10,7 +10,7 @@ sys.path.insert(0, "/Users/Loaner/Documents/E160_Code/")
 from E160_config import CONFIG_DELTA_T, CONFIG_RAMP_PERCENT_CONSTANT
 from E160_environment import *
 from E160_graphics import *
-from math import sqrt
+from math import sqrt, pi
 from random import gauss
 from statistics import mean, stdev
 import time
@@ -21,7 +21,8 @@ IS_DEBUG = True
 # DESIRED_POWER = DESIRED_POWER_PERCENT *(256/100)  # percentage of total power on left (slower) motor
 
 DESIRED_SW_TICK_RATE = 100
-DISTANCE_TO_RUN_M = 1.5
+SPIN_DIRECTION = 1 # 1 clockwise, -1 counter clockwise
+ANGLE_TO_SPIN = math.pi
 
 # dictionary of known (temporary) alpha values
 # ALPHAS_MAP = {0: 1.0,
@@ -65,8 +66,9 @@ if __name__ == "__main__":
   #   runRobot(env, graphics=graphics)
 
   # robot.R_motor_scaling_factor = ALPHAS_MAP[DESIRED_POWER_PERCENT]
-  robot.testing_power_L = DESIRED_SW_TICK_RATE
-  robot.file_name = "Log/RunStraight_LeftWheel_TR"+str(DESIRED_SW_TICK_RATE)+"_Meters_"+str(DISTANCE_TO_RUN_M)+'_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S')+".txt"
+  robot.testing_power_L = SPIN_DIRECTION * DESIRED_SW_TICK_RATE
+  robot.testing_power_R = -SPIN_DIRECTION *  DESIRED_SW_TICK_RATE
+  robot.file_name = "Log/RunStraight_LeftWheel_TR"+str(DESIRED_SW_TICK_RATE)+"_Meters_"+str(ANGLE_TO_SPIN)+'_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S')+".txt"
   robot.change_headers()
 
   num_trials = 0
@@ -76,7 +78,7 @@ if __name__ == "__main__":
   num_right_ticks = 0
   totalTheta = 0
 
-  while abs(robot.state_est.x) < DISTANCE_TO_RUN_M:
+  while abs(robot.state_est.theta_cumulative) < ANGLE_TO_SPIN:
 
     # measure the error between the encoder readings
     deltaS, deltaTheta = robot.delta_state
@@ -93,6 +95,7 @@ if __name__ == "__main__":
        break
 
   robot.testing_power_L = 0
+  robot.testing_power_R = 0
   runRobot(env, graphics=graphics)
   print("Ran for ", num_left_ticks, "ticks on left") #, and deviated by theta =", totalTheta,".")
   print("Ran for ", num_right_ticks, "ticks on right")
