@@ -45,6 +45,7 @@ class E160_robot:
         self.delta_state = (0, 0)
         # self.R_motor_scaling_factor = CONFIG_R_MOTOR_SCALING_FACTOR
         self.testing_power_L = 0
+        self.testing_power_R = 0
 
         # self.sum
 
