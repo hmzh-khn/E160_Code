@@ -5,6 +5,7 @@ TODO: Make it less dependent on correct path.
 """
 import sys
 sys.path.insert(0, "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/")
+sys.path.insert(0, "/Users/Loaner/Documents/E160_Code/")
 
 from E160_config import CONFIG_DELTA_T, CONFIG_RAMP_PERCENT_CONSTANT
 from E160_environment import *
@@ -20,7 +21,7 @@ IS_DEBUG = True
 # DESIRED_POWER = DESIRED_POWER_PERCENT *(256/100)  # percentage of total power on left (slower) motor
 
 DESIRED_SW_TICK_RATE = 100
-DISTANCE_TO_RUN_M = 5
+DISTANCE_TO_RUN_M = 4.5
 
 # dictionary of known (temporary) alpha values
 # ALPHAS_MAP = {0: 1.0,
