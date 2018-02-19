@@ -5,6 +5,7 @@ TODO: Make it less dependent on correct path.
 """
 import sys
 sys.path.insert(0, "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/")
+sys.path.insert(0, "/Users/Loaner/Documents/E160_Code/")
 
 from E160_config import CONFIG_DELTA_T, CONFIG_RAMP_PERCENT_CONSTANT
 from E160_environment import *
@@ -19,8 +20,8 @@ IS_DEBUG = True
 # DESIRED_POWER_PERCENT = 0
 # DESIRED_POWER = DESIRED_POWER_PERCENT *(256/100)  # percentage of total power on left (slower) motor
 
-DESIRED_SW_TICK_RATE = 100
-NUM_TICKS_TO_RUN = 30000 # should be ~4.5 meters
+DESIRED_SW_TICK_RATE = 70
+NUM_TICKS_TO_RUN = 25000 # should be ~4.5 meters
 
 # dictionary of known (temporary) alpha values
 # ALPHAS_MAP = {0: 1.0,
@@ -65,6 +66,7 @@ if __name__ == "__main__":
 
   # robot.R_motor_scaling_factor = ALPHAS_MAP[DESIRED_POWER_PERCENT]
   robot.testing_power_L = DESIRED_SW_TICK_RATE
+  robot.testing_power_R = DESIRED_SW_TICK_RATE
   robot.file_name = "Log/RunStraight_LeftWheel_TR"+str(DESIRED_SW_TICK_RATE)+"_Ticks_"+str(NUM_TICKS_TO_RUN)+'_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S')+".txt"
   robot.change_headers()
 
@@ -92,9 +94,17 @@ if __name__ == "__main__":
        break
 
   robot.testing_power_L = 0
+  robot.testing_power_R = 0
   runRobot(env, graphics=graphics)
   print("Ran for ", num_left_ticks, "ticks on left") #, and deviated by theta =", totalTheta,".")
   print("Ran for ", num_right_ticks, "ticks on right")
+
+
+  delta_distance = input('What was the distance in cm? ')
+  f = open('Log/cmPerTickTest.txt', 'a+')
+  data = [str(DESIRED_SW_TICK_RATE), str(NUM_TICKS_TO_RUN), str(num_left_ticks), str(num_right_ticks), str((num_right_ticks+num_left_ticks)/2), str(delta_distance)]
+
+  f.write(' '.join(data) + '\n')
 
 
 
