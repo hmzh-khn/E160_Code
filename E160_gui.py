@@ -1,6 +1,5 @@
 """
 E160_gui.py
-
 """
 from E160_config import CONFIG_DELTA_T
 import time

@@ -7,7 +7,6 @@ if sys.version_info[0] < 3:
 else:
     from tkinter import *
 from E160_robot import *
-from E160_robot import *
 from PIL import Image, ImageTk
 
 
