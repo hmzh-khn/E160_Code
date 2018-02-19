@@ -91,12 +91,13 @@ CONFIG_RIGHT_CM_TO_TICKS_MAP = {
 Conversions
 """
 CONFIG_CM_TO_M = 0.01
+CONFIG_DEGS_PER_REVOLUTION = 360 # degrees per revolution (i.e. per 2 pi)
 
 """ 
 Set all of the regularly altered configurations here.
 """
 
-CONFIG_LAB_NUMBER = 2
+CONFIG_LAB_NUMBER = 3
 
 ##### SET DESIRED STOP DISTANCE MODE HERE (for Lab 1) #####
 CONFIG_OFFSET_CM = 0.5*2.54

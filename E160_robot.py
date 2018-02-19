@@ -28,7 +28,7 @@ class E160_robot:
         self.manual_control_right_motor = 0
         self.file_name = 'Log/Bot' + str(self.robot_id) + '_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
         self.make_headers()
-        self.encoder_resolution = 1440
+        # self.encoder_resolution = 1440
         
         self.last_encoder_measurements = [0,0]
         self.encoder_measurements = [0,0]
@@ -39,15 +39,20 @@ class E160_robot:
         self.delta_right = 0
         self.delta_left = 0
 
-        self.first_run_flag = 1
+        self.is_first_run = True
 
         # stores changes in deltaS, deltaTheta
         self.delta_state = (0, 0)
-        # self.R_motor_scaling_factor = CONFIG_R_MOTOR_SCALING_FACTOR
         self.testing_power_L = 0
         self.testing_power_R = 0
 
-        # self.sum
+        # Lab 3
+        self.Kpho = 1#1.0
+        self.Kalpha = 2#2.0
+        self.Kbeta = -0.5#-0.5
+        self.max_velocity = 0.05
+        self.point_tracked = True
+        self.encoder_per_sec_to_rad_per_sec = 10
 
     def change_headers(self):
         self.make_headers()
@@ -76,7 +81,7 @@ class E160_robot:
         
         if self.environment.robot_mode == "HARDWARE MODE":
             command = '$S @'
-            self.environment.xbee.tx(dest_addr = self.address, data = command)
+            self.environment.xbee.tx(dest_addr=self.address, data=command)
             
             update = self.environment.xbee.wait_read_frame()
             
@@ -85,7 +90,7 @@ class E160_robot:
             encoder_measurements = data[-2:]
             range_measurements = data[:-2]
         
-        # obtain sensor measurements !!!!!! Chris
+        # obtain sensor measurements
         elif self.environment.robot_mode == "SIMULATION MODE":
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
             range_measurements = [0,0,0]
@@ -127,13 +132,18 @@ class E160_robot:
             elif CONFIG_LAB_NUMBER == 2:
                 # write lab2 controller
                 pass
+
+            elif CONFIG_LAB_NUMBER == 3:
+                R = L = self.lab3_controller(range_measurements)
+                pass
             else:
                 # do nothing
                 pass
 
         # print("power (L,R) - ", (L,R), (old_L,old_R))
         return R, L
-            
+        
+
     def send_control(self, R, L, deltaT):
         
         # send to actual robot !!!!!!!!
@@ -158,18 +168,18 @@ class E160_robot:
             left_tick_rate = LPWM
             command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
-            
+        
 
     def simulate_encoders(self, R, L, deltaT):
-        gain = 10
-        right_encoder_measurement = -int(R*gain*deltaT) + self.last_simulated_encoder_R
-        left_encoder_measurement = -int(L*gain*deltaT) + self.last_simulated_encoder_L
+        right_encoder_measurement = -int(R*self.encoder_per_sec_to_rad_per_sec*deltaT) + self.last_simulated_encoder_R
+        left_encoder_measurement = -int(L*self.encoder_per_sec_to_rad_per_sec*deltaT) + self.last_simulated_encoder_L
         self.last_simulated_encoder_R = right_encoder_measurement
         self.last_simulated_encoder_L = left_encoder_measurement
         
         return [left_encoder_measurement, right_encoder_measurement]
     
-        
+
+    # clean up this function
     def update_odometry(self, encoder_measurements):
 
         delta_s = 0
@@ -184,12 +194,12 @@ class E160_robot:
         self.delta_left = float(left_encoder_measurement - last_left_encoder_measurement)
         self.delta_right = float(right_encoder_measurement - last_right_encoder_measurement)    
 
-        if self.first_run_flag:
+        if self.is_first_run:
             self.delta_right = 0
             self.delta_left = 0
-            self.first_run_flag = 0
+            self.is_first_run = False
 
-        #cause the lab said so I like my name better
+        # cause the lab said so I like my name better
         diffEncoder0 = self.delta_left
         diffEncoder1 = self.delta_right
 
@@ -215,9 +225,7 @@ class E160_robot:
         # keep this to return appropriate changes in distance, angle
         return delta_s, delta_theta 
 
-    
-    
-    
+
     def update_state(self, state, delta_s, delta_theta):
         
         # ****************** Additional Student Code: Start ************
@@ -295,8 +303,39 @@ class E160_robot:
     def lab2_controller(self, range_measurements):
         pass
 
+    ############ LAB 3 #################
+    def lab3_controller(self, range_measurements):
+        if self.environment.control_mode == "MANUAL CONTROL MODE":
+            desiredWheelSpeedR = self.manual_control_right_motor
+            desiredWheelSpeedL = self.manual_control_left_motor
+            
+        elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":   
+            desiredWheelSpeedR, desiredWheelSpeedL = self.point_tracker_control()
+            
+        return desiredWheelSpeedR, desiredWheelSpeedL
+
+
+    def point_tracker_control(self):
+
+        # If the desired point is not tracked yet, then track it
+        if not self.point_tracked:
+            ############ Student code goes here ############################################
+            pass
+            
+            
+        # the desired point has been tracked, so don't move
+        else:
+            desiredWheelSpeedR = 0
+            desiredWheelSpeedL = 0
+                
+        return desiredWheelSpeedR, desiredWheelSpeedL
+
+    ############ END LAB 3 #################
+
     def normalize_angle(self, theta):
-        '''makes the angle normal but not normal (pi/2)'''
+        '''
+        Returns an angle in range (-pi, pi]
+        '''
         out_angle = theta % (2 * math.pi)
         if out_angle > math.pi:
             out_angle = out_angle - 2 * math.pi
@@ -318,3 +357,9 @@ class E160_robot:
 
         # print("ramped power (L,R) - ", (ramped_L,ramped_R)) 
         return ramped_L, ramped_R
+
+
+    def set_manual_control_motors(self, R, L):
+        
+        self.manual_control_right_motor = int(R*256/100)
+        self.manual_control_left_motor = int(L*256/100)
