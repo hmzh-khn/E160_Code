@@ -21,8 +21,17 @@ cmpt40 = mean(P40)/mean(T40); % centimeters per tick
 P60 = [505.5 516.5 502 505 506];
 T60 = [30161 30675 30084 30300 30321];
 
+
+err = [std(P20./T20) ,std(P40./T40), std(P60./T60)]
 tpcm60 = mean(T60)/mean(P60); % ticks per centimeter
 cmpt60 = mean(P60)/mean(T60); % centimeters per tick
 
-powers = [20,40,60]
-cmpt = [cmpt20 cmpt40 cmpt60]
+powers = [20,40,60];
+cmpt = [cmpt20 cmpt40 cmpt60];
+
+
+errorbar(powers, cmpt, err)
+axis([15,65,0.015,0.017])
+title('Team Swana cm per encoder tick as a function of percent power')
+xlabel('Power level (%)')
+ylabel('Cm per Encoder Tick')
