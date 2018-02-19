@@ -24,6 +24,9 @@ class E160_graphics:
         #self.north_frame = Frame(self.tk)
         #self.north_frame.pack(anchor = N)
 
+        self.bottom_frame = Frame(self.tk)
+        self.bottom_frame.pack(side = BOTTOM)
+
         self.typing_frame = Frame(self.bottom_frame)
         self.typing_frame.pack(side = TOP)
         self.prev_typing_int = 0
