@@ -98,14 +98,14 @@ CONFIG_DEGS_PER_REVOLUTION = 360 # degrees per revolution (i.e. per 2 pi)
 Set all of the regularly altered configurations here.
 """
 
-CONFIG_LAB_NUMBER = 3
+CONFIG_LAB_NUMBER = 2
 
 ##### SET DESIRED STOP DISTANCE MODE HERE (for Lab 1) #####
 CONFIG_OFFSET_CM = 0.5*2.54
 CONFIG_DESIRED_DISTANCE_CM = 30.0 - CONFIG_OFFSET_CM
 
 ##### SET HARDWARE MODE HERE (Simulation or Hardware) #####
-CONFIG_ROBOT_MODE = SIMULATION_MODE
+CONFIG_ROBOT_MODE = HARDWARE_MODE
 ##### SET CONTROL MODE HERE (Manual or Autonomous) #####
 CONFIG_CONTROL_MODE = AUTONOMOUS_CONTROL_MODE
 

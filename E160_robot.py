@@ -363,12 +363,10 @@ class E160_robot:
 
             # 4b. Convert rotational velocities to wheel velocities in cm/s.
             robot_rotational_vel_to_wheel_rotational_vel_m_per_sec = 2*self.radius/self.wheel_radius
-            wheel_velocity_right_cm_per_sec = 
-                            (wheel_rotational_velocity_right_rad_per_sec 
+            wheel_velocity_right_cm_per_sec = (wheel_rotational_velocity_right_rad_per_sec 
                              * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
                              * CONFIG_M_TO_CM)
-            wheel_velocity_left_cm_per_sec = 
-                            (wheel_rotational_velocity_left_rad_per_sec 
+            wheel_velocity_left_cm_per_sec = (wheel_rotational_velocity_left_rad_per_sec 
                              * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
                              * CONFIG_M_TO_CM)
 
