@@ -13,8 +13,7 @@ class E160_robot:
         self.state_est.set_state(0,0,0)
         self.state_des = E160_state()
         self.state_des.set_state(0,0,0)
-        #self.v = 0.05
-        #self.w = 0.1
+
         self.R = 0
         self.L = 0
         self.radius = 0.147 / 2
@@ -41,18 +40,26 @@ class E160_robot:
 
         self.is_first_run = True
 
-        # stores changes in deltaS, deltaTheta
+        # stores changes in deltaS, deltaTheta between iterations
         self.delta_state = (0, 0)
         self.testing_power_L = 0
         self.testing_power_R = 0
 
         # Lab 3
-        self.Kpho = 1#1.0
-        self.Kalpha = 2#2.0
-        self.Kbeta = -0.5#-0.5
-        self.max_velocity = 0.05
+        self.K_rho = 1#1.0
+        self.K_alpha = 2#2.0
+        self.K_beta = -0.5#-0.5
+        self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
+
+        # state that monitors difference between desired state, estimated state
+        self.difference_state = E160_state()
+        self.difference_state.set_state(0,0,0)
+
+        # forward, rotational velocities
+        self.v = 0.0
+        self.w = 0.0
 
     def change_headers(self):
         self.make_headers()
@@ -209,8 +216,8 @@ class E160_robot:
         # TODO: implement calibration from ticks to centimeters
         # left_distance = (self.delta_left / self.encoder_resolution) * wheel_circumference
         # right_distance = (self.delta_right / self.encoder_resolution) * wheel_circumference
-        left_distance  = self.delta_left  * CONFIG_CM_TO_M *  CONFIG_LEFT_CM_TO_TICKS_MAP[100]
-        right_distance = self.delta_right * CONFIG_CM_TO_M * CONFIG_RIGHT_CM_TO_TICKS_MAP[100]
+        left_distance  = self.delta_left  * CONFIG_CM_TO_M *  CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[100]
+        right_distance = self.delta_right * CONFIG_CM_TO_M * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[100]
 
         delta_s = (left_distance + right_distance) / 2
         delta_theta = (right_distance - left_distance) / (2 * self.radius)
@@ -317,18 +324,71 @@ class E160_robot:
 
     def point_tracker_control(self):
 
+        wheel_velocity_right_ticks_per_sec = 0
+        wheel_velocity_left_ticks_per_sec  = 0
+
         # If the desired point is not tracked yet, then track it
         if not self.point_tracked:
             ############ Student code goes here ############################################
-            pass
             
+            # 1. Calculate changes in x, y.
+            self.difference_state = self.state_est.get_state_difference(self.state_des)
+            Dx = self.difference_state.x
+            Dy = self.difference_state.y
+            Dtheta = self.difference_state.theta
+
+            # going forward if change in theta in [-pi/2, pi/2]
+            is_forward = 1
+            # going backward if in [-pi, -pi/2) or (pi/2, pi]
+            if abs(Dtheta) > math.pi/2:
+                is_forward = -1
+
+            # 2. Calculate position of \rho, \alpha, \beta, respectively
+            distance_to_point = math.sqrt(Dx**2 + Dy**2)
+            angle_error = -self.state_est.theta + math.atan2(is_forward * Dy, 
+                                                             is_forward * Dx)
+            negated_angle_final = -self.state_est.theta - angle_error
+
+            # 3. Identify desired velocities (bound by max velocity)
+            # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
+            self.v = max(-self.max_speed_m_per_sec, 
+                         min(is_forward * self.K_rho * distance_to_point, 
+                             self.max_speed_m_per_sec))
+            self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
+
+            # 4a. Determine desired wheel rotational velocities using desired robot velocities
+            # Assuming CW is positive, then right wheel positively correlated w/ velocity
+            wheel_rotational_velocity_right_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
+            wheel_rotational_velocity_left_rad_per_sec = 0.5 * (self.w - (self.v/self.radius))
+
+            # 4b. Convert rotational velocities to wheel velocities in cm/s.
+            robot_rotational_vel_to_wheel_rotational_vel_m_per_sec = 2*self.radius/self.wheel_radius
+            wheel_velocity_right_cm_per_sec = 
+                            (wheel_rotational_velocity_right_rad_per_sec 
+                             * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
+                             * CONFIG_M_TO_CM)
+            wheel_velocity_left_cm_per_sec = 
+                            (wheel_rotational_velocity_left_rad_per_sec 
+                             * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
+                             * CONFIG_M_TO_CM)
+
+            # 4c. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
+            # TODO: Finish up map, design interpolation for cm to ticks conversion
+            wheel_velocity_right_ticks_per_sec = 0
+            wheel_velocity_left_ticks_per_sec  = 0
+
+
+            # 5. Check if we are close enough to desired destination
+            # TODO: add a threshold
+            self.point_tracked = False
+
+
             
         # the desired point has been tracked, so don't move
         else:
-            desiredWheelSpeedR = 0
-            desiredWheelSpeedL = 0
+            pass
                 
-        return desiredWheelSpeedR, desiredWheelSpeedL
+        return wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec
 
     ############ END LAB 3 #################
 
