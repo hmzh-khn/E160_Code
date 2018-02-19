@@ -7,7 +7,6 @@ if sys.version_info[0] < 3:
 else:
     from tkinter import *
 from E160_robot import *
-from E160_robot import *
 from PIL import Image, ImageTk
 
 
@@ -16,12 +15,15 @@ class E160_graphics:
     def __init__(self, environment):
         self.environment = environment
         self.tk = Tk()
-        self.top_frame = Frame(self.tk)
-        self.top_frame.pack(anchor = N)
-        self.north_east_frame = Frame(self.top_frame)
-        self.north_east_frame.pack(anchor = NE)
-        self.north_west_frame = Frame(self.top_frame)
-        self.north_west_frame.pack(anchor = NW)
+        #self.top_frame = Frame(self.tk) #blame clark
+        #self.top_frame.pack(anchor = N)
+        #self.north_east_frame = Frame(self.tk)
+        #self.north_east_frame.pack(anchor = NE)
+        self.north_west_frame = Frame(self.tk)
+        self.north_west_frame.pack(anchor = W)
+        #self.north_frame = Frame(self.tk)
+        #self.north_frame.pack(anchor = N)
+
         self.bottom_frame = Frame(self.tk)
         self.bottom_frame.pack(side = BOTTOM)
 
@@ -73,21 +75,15 @@ class E160_graphics:
         # add stop button
         self.track_point_button = Button(self.bottom_frame, text="Quit", anchor="s", wraplength=100, command=self.quit).pack()
   
-        # draw static environment
-        for w in self.environment.walls:
-            self.draw_wall(w)
-            
-        # draw first robot
-        for r in self.environment.robots:
-            self.initial_draw_robot(r) 
+
 
         # add range sensor measurements
         self.range_sensor_var_1 = StringVar()
         self.range_sensor_var_2 = StringVar()
         self.range_sensor_var_3 = StringVar()
-        self.range_sensor_label_1 = Label(self.north_east_frame, textvariable = self.range_sensor_var_1).pack()
-        self.range_sensor_label_2 = Label(self.north_east_frame, textvariable = self.range_sensor_var_2).pack()
-        self.range_sensor_label_3 = Label(self.north_east_frame, textvariable = self.range_sensor_var_3).pack()
+        self.range_sensor_label_1 = Label(self.north_west_frame, textvariable = self.range_sensor_var_1).pack()
+        self.range_sensor_label_2 = Label(self.north_west_frame, textvariable = self.range_sensor_var_2).pack()
+        self.range_sensor_label_3 = Label(self.north_west_frame, textvariable = self.range_sensor_var_3).pack()
 
         # add encoder sensor measurements
         self.encoder_sensor_var_0 = StringVar()
@@ -100,14 +96,41 @@ class E160_graphics:
         self.x = StringVar()
         self.y = StringVar()
         self.theta = StringVar()
-        self.x_label = Label(self.north_east_frame, textvariable = self.x).pack()
-        self.y_label = Label(self.north_east_frame, textvariable = self.y).pack()
-        self.theta_label = Label(self.north_east_frame, textvariable = self.theta).pack()
+        self.x_label = Label(self.north_west_frame, textvariable = self.x).pack()
+        self.y_label = Label(self.north_west_frame, textvariable = self.y).pack()
+        self.theta_label = Label(self.north_west_frame, textvariable = self.theta).pack()
        
-    
+        # add text entry for desired X
+        #self.x_des_label = Label(self.north_frame, text="X desired")
+        #self.x_des_label.pack()
+        self.x_des_entry = Entry(self.north_west_frame, justify = RIGHT)
+        self.x_des_entry.insert(10,"0.0")
+        self.x_des_entry.pack()
         
+        # add text entry for desired Y
+        #self.y_des_label = Label(self.north_west_frame, text="Y desired")
+        #self.y_des_label.pack()
+        self.y_des_entry = Entry(self.north_west_frame, justify = RIGHT)
+        self.y_des_entry.insert(10,"0.0")
+        self.y_des_entry.pack()
         
-        #self.range_sensor_label_1.pack()   
+        # add text entry for desired Theta
+        #self.theta_des_label = Label(self.north_west_frame, text="Theta desired")
+        #self.theta_des_label.pack()
+        self.theta_des_entry = Entry(self.north_west_frame, justify = RIGHT)
+        self.theta_des_entry.insert(10,"0.0")
+        self.theta_des_entry.pack()
+
+        
+                # draw static environment
+        for w in self.environment.walls:
+            self.draw_wall(w)
+            
+        # draw first robot
+        for r in self.environment.robots:
+            self.initial_draw_robot(r)    
+     
+  
     
     
 
@@ -173,6 +196,14 @@ class E160_graphics:
         self.last_rotate_control = 0
         self.R = 0
         self.L = 0
+
+        # Get the desired point
+        for r in self.environment.robots:
+            x_des = float(self.x_des_entry.get())
+            y_des = float(self.y_des_entry.get())
+            theta_des = float(self.theta_des_entry.get())
+            r.state_des.set_state(x_des,y_des,theta_des)
+            r.point_tracked = False 
         
     def stop(self):
         self.environment.control_mode = "MANUAL CONTROL MODE"
@@ -209,8 +240,8 @@ class E160_graphics:
         # check to see if forward slider has changed
         delta_forward = self.forward_control.get()-self.last_forward_control
         if abs(delta_forward) > 0:
-            ramped_delta = max(min(delta_forward,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
-            self.rotate_control.set(0)       
+            #ramped_delta = max(min(delta_forward,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
+            self.rotate_control.set(0)
             self.last_forward_control = self.forward_control.get()
             #self.last_forward_control = self.last_forward_control + ramped_delta #why did I do this in gfx/
             self.last_rotate_control = 0         
@@ -219,8 +250,8 @@ class E160_graphics:
             # extract what the R and L motor signals should be
             # self.R = self.forward_control.get()
             # self.L = self.forward_control.get()
-            self.R = self.last_forward_control # last forward control is currently
-            self.L = self.last_forward_control #  this forward control...
+            self.R = self.forward_control.get() # last forward control is currently
+            self.L = self.forward_control.get() #  this forward control...
 
         # check to see if rotate slider has changed
         elif abs(self.rotate_control.get()-self.last_rotate_control) > 0:
@@ -254,6 +285,7 @@ class E160_graphics:
         self.x.set("X (m):  " + str(self.environment.robots[0].state_est.x))
         self.y.set("Y (m):  " + str(self.environment.robots[0].state_est.y))
         self.theta.set("Theta (rad):  " + str(self.environment.robots[0].state_est.theta))  
+
 
     # called at every iteration of main loop
     def update(self):
