@@ -1,4 +1,4 @@
-"""
+a,tc"""
 Learn alpha using the encoder readings assuming a proportional control model. 
 
 TODO: Make it less dependent on correct path.
