@@ -20,9 +20,9 @@ IS_DEBUG = True
 # DESIRED_POWER_PERCENT = 0
 # DESIRED_POWER = DESIRED_POWER_PERCENT *(256/100)  # percentage of total power on left (slower) motor
 
-DESIRED_SW_TICK_RATE = 100
-SPIN_DIRECTION = 1 # 1 clockwise, -1 counter clockwise
-ANGLE_TO_SPIN = math.pi
+DESIRED_SW_TICK_RATE = 25
+SPIN_DIRECTION = -1 # 1 clockwise, -1 counter clockwise
+ANGLE_TO_SPIN = math.pi / 2
 
 # dictionary of known (temporary) alpha values
 # ALPHAS_MAP = {0: 1.0,
@@ -68,7 +68,12 @@ if __name__ == "__main__":
   # robot.R_motor_scaling_factor = ALPHAS_MAP[DESIRED_POWER_PERCENT]
   robot.testing_power_L = SPIN_DIRECTION * DESIRED_SW_TICK_RATE
   robot.testing_power_R = -SPIN_DIRECTION *  DESIRED_SW_TICK_RATE
-  robot.file_name = "Log/RunStraight_LeftWheel_TR"+str(DESIRED_SW_TICK_RATE)+"_Meters_"+str(ANGLE_TO_SPIN)+'_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S')+".txt"
+
+  dir_str = ''
+  if(SPIN_DIRECTION == -1):
+    dir_str = 'ccw'
+
+  robot.file_name = "Log/RunCircle_LeftWheel_TR"+str(DESIRED_SW_TICK_RATE)+"_Angle_"+str(ANGLE_TO_SPIN)+'_' + dir_str +'_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S')+".txt"
   robot.change_headers()
 
   num_trials = 0
@@ -96,10 +101,18 @@ if __name__ == "__main__":
 
   robot.testing_power_L = 0
   robot.testing_power_R = 0
+  robot.send_control(0 , 0, 0.02)
   runRobot(env, graphics=graphics)
   print("Ran for ", num_left_ticks, "ticks on left") #, and deviated by theta =", totalTheta,".")
   print("Ran for ", num_right_ticks, "ticks on right")
 
+  delta_angle = input('What was the delta angle? ')
+  delta_angle = float(delta_angle) / 360 * 2 * math.pi
+
+  f = open('Log/circleTest.txt', 'a+')
+  data = [str(DESIRED_SW_TICK_RATE), str(ANGLE_TO_SPIN), str(SPIN_DIRECTION), str(num_left_ticks), str(num_right_ticks), str(robot.state_est.theta_cumulative), str(delta_angle)]
+
+  f.write(' '.join(data) + '\n')
 
 
 

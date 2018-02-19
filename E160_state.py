@@ -13,7 +13,7 @@ class E160_state:
 
     def add_theta(self, delta_theta):
     	self.theta_cumulative += delta_theta
-    	print(self.theta_cumulative)
+    	print(self.theta_cumulative, self.theta_cumulative/ (2 * 3.14159) * 360)
 
     def __str__(self):
       return " ".join([str(self.x), str(self.y), str(self.theta)])
