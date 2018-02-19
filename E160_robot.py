@@ -222,8 +222,8 @@ class E160_robot:
         
         # ****************** Additional Student Code: Start ************
 
-        x_new = state.x + math.cos(state.theta) * delta_s
-        y_new = state.y + math.sin(state.theta) * delta_s
+        x_new = state.x + math.cos(state.theta + delta_theta / 2) * delta_s
+        y_new = state.y + math.sin(state.theta + delta_theta / 2) * delta_s
 
         theta_new = self.normalize_angle(state.theta + delta_theta)
         state.add_theta(delta_theta)
