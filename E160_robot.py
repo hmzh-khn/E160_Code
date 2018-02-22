@@ -99,7 +99,6 @@ class E160_robot:
         
         # obtain sensor measurements
         elif self.environment.robot_mode == "SIMULATION MODE":
-            print(self.R, ' in sim')
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
             range_measurements = [0,0,0]
         
@@ -174,15 +173,11 @@ class E160_robot:
             # 256 -> 1400 per 100 ms = 280 per 20 ms
             right_tick_rate = RPWM
             left_tick_rate = LPWM
-            print(str(right_tick_rate) + ' ' + str(left_tick_rate))
             command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
         
 
     def simulate_encoders(self, R, L, deltaT):
-        print(deltaT)
-        print(R, L)
-        print(self.encoder_per_sec_to_rad_per_sec)
         right_encoder_measurement = -int(R*self.encoder_per_sec_to_rad_per_sec*deltaT) + self.last_simulated_encoder_R
         left_encoder_measurement = -int(L*self.encoder_per_sec_to_rad_per_sec*deltaT) + self.last_simulated_encoder_L
         self.last_simulated_encoder_R = right_encoder_measurement
@@ -360,9 +355,7 @@ class E160_robot:
 
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
-            self.v = max(-self.max_speed_m_per_sec, 
-                         min(is_forward * self.K_rho * distance_to_point, 
-                             self.max_speed_m_per_sec))
+            self.v = is_forward * self.K_rho * distance_to_point
             self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
 
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
