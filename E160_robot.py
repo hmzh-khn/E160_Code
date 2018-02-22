@@ -344,7 +344,7 @@ class E160_robot:
             # going forward if change in theta in [-pi/2, pi/2]
             is_forward = 1
             # going backward if in [-pi, -pi/2) or (pi/2, pi]
-            if abs() > math.pi/2:
+            if abs(math.atan2(Dy, Dx)) > math.pi/2:
                 is_forward = -1
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
