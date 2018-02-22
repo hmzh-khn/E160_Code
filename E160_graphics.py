@@ -42,6 +42,10 @@ class E160_graphics:
         self.last_forward_control = 0
         self.R = 0
         self.L = 0
+
+        self.robot = self.environment.robots[0]
+
+
         
         # attempt at typing input
         power_text=StringVar()
@@ -56,20 +60,21 @@ class E160_graphics:
         proportional_label=Label(self.typing_frame, textvariable=proportional, height=4)
         proportional_label.pack(side="left")
         self.typing_proportional = Entry(self.typing_frame)
-        self.typing_proportional.pack(side=RIGHT)
+        self.typing_proportional.pack(side=LEFT)
 
-        alpha_text=StringVar()
-        alpha_text.set("Ka:")
-        alpha_label=Label(self.typing_frame, textvariable=alpha_text, height=4)
-        alpha_label.pack(side="left")
-        self.typing_alpha = Entry(self.typing_frame)
-        self.typing_alpha.pack(side=RIGHT)
-        alpha_text=StringVar()
-        alpha_text.set("Kb:")
-        alpha_label=Label(self.typing_frame, textvariable=alpha_text, height=4)
-        alpha_label.pack(side="left")
-        self.typing_alpha = Entry(self.typing_frame)
-        self.typing_alpha.pack(side=RIGHT)
+        k_alpha_text=StringVar()
+        k_alpha_text.set("Ka:")
+        k_alpha_label=Label(self.typing_frame, textvariable=k_alpha_text, height=4)
+        k_alpha_label.pack(side="left")
+        self.typing_k_alpha = Entry(self.typing_frame)
+        self.typing_k_alpha.pack(side=LEFT)
+
+        k_beta_text=StringVar()
+        k_beta_text.set("Kb:")
+        k_beta_label=Label(self.typing_frame, textvariable=k_beta_text, height=4)
+        k_beta_label.pack(side="left")
+        self.typing_k_beta = Entry(self.typing_frame)
+        self.typing_k_beta.pack(side=LEFT)
        
         # add motor control slider
         self.forward_control = Scale(self.bottom_frame, from_=-100, to=100, length  = 400,label="Forward Control",tickinterval=50, orient=HORIZONTAL, resolution=CONFIG_SCALE_RESOLUTION)
@@ -134,7 +139,11 @@ class E160_graphics:
         self.theta_des_entry.insert(10,"0.0")
         self.theta_des_entry.pack()
 
-        
+
+        self.typing_proportional.insert(0,self.robot.K_rho)
+        self.typing_k_alpha.insert(0,self.robot.K_alpha) 
+        self.typing_k_beta.insert(0,self.robot.K_beta)  
+
                 # draw static environment
         for w in self.environment.walls:
             self.draw_wall(w)
@@ -323,6 +332,15 @@ class E160_graphics:
             self.typing_int = max(-100,self.typing_int)
         except:
             typing_int=0
+        try:
+            self.k_proportional = float(self.typing_proportional.get())
+            self.k_alpha = float(self.typing_k_alpha.get())
+            self.k_beta = float(self.typing_k_beta.get())
+            self.robot.K_rho = self.k_proportional
+            self.robot.K_alpha = self.k_alpha
+            self.robot.K_beta = self.k_beta
+        except:
+            print('error getting some K')
 
         if(self.prev_typing_int != self.typing_int):
             self.forward_control.set(self.typing_int)
