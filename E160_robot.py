@@ -46,9 +46,9 @@ class E160_robot:
         self.testing_power_R = 0
 
         # Lab 3
-        self.K_rho = 1#1.0
-        self.K_alpha = 2#2.0
-        self.K_beta = -0.5#-0.5
+        self.K_rho = 0.1#1.0
+        self.K_alpha = 0.2#2.0
+        self.K_beta = -0.05#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -99,6 +99,7 @@ class E160_robot:
         
         # obtain sensor measurements
         elif self.environment.robot_mode == "SIMULATION MODE":
+            print(self.R, ' in sim')
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
             range_measurements = [0,0,0]
         
@@ -141,7 +142,7 @@ class E160_robot:
                 pass
 
             elif CONFIG_LAB_NUMBER == 3:
-                R = L = self.lab3_controller(range_measurements)
+                R, L = self.lab3_controller(range_measurements)
                 pass
             else:
                 # do nothing
@@ -165,19 +166,23 @@ class E160_robot:
             else:
                 RDIR = 1
             # PWM is positive 8 bit number, can change this to be floats with PI controller code.
-            RPWM = 14*(2*RDIR - 1)*int(abs(R))
-            LPWM = 14*(2*LDIR - 1)*int(abs(L))
+            RPWM = (2*RDIR - 1)*int(abs(R))
+            LPWM = (2*LDIR - 1)*int(abs(L))
 
             command = '$M ' + str(LDIR) + ' ' + str(LPWM) + ' ' + str(RDIR) + ' ' + str(RPWM) + '@'
             # command should have the desired tick rate per 20 ms
             # 256 -> 1400 per 100 ms = 280 per 20 ms
             right_tick_rate = RPWM
             left_tick_rate = LPWM
+            print(str(right_tick_rate) + ' ' + str(left_tick_rate))
             command = '$T ' + str(right_tick_rate) + ' ' + str(left_tick_rate)  + '@'
             self.environment.xbee.tx(dest_addr = self.address, data = command)
         
 
     def simulate_encoders(self, R, L, deltaT):
+        print(deltaT)
+        print(R, L)
+        print(self.encoder_per_sec_to_rad_per_sec)
         right_encoder_measurement = -int(R*self.encoder_per_sec_to_rad_per_sec*deltaT) + self.last_simulated_encoder_R
         left_encoder_measurement = -int(L*self.encoder_per_sec_to_rad_per_sec*deltaT) + self.last_simulated_encoder_L
         self.last_simulated_encoder_R = right_encoder_measurement
@@ -216,8 +221,8 @@ class E160_robot:
         # TODO: implement calibration from ticks to centimeters
         # left_distance = (self.delta_left / self.encoder_resolution) * wheel_circumference
         # right_distance = (self.delta_right / self.encoder_resolution) * wheel_circumference
-        left_distance  = self.delta_left  * CONFIG_CM_TO_M *  CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[100]
-        right_distance = self.delta_right * CONFIG_CM_TO_M * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[100]
+        left_distance  = self.delta_left  * CONFIG_CM_TO_M *  CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+        right_distance = self.delta_right * CONFIG_CM_TO_M * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
 
         delta_s = (left_distance + right_distance) / 2
         delta_theta = (right_distance - left_distance) / (2 * self.radius)
@@ -337,6 +342,10 @@ class E160_robot:
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
 
+            if(abs(Dx) < 0.01 and abs(Dy) < 0.01 and abs(Dtheta) < 0.1):
+                self.point_tracked = True
+                return 0 , 0
+
             # going forward if change in theta in [-pi/2, pi/2]
             is_forward = 1
             # going backward if in [-pi, -pi/2) or (pi/2, pi]
@@ -359,7 +368,7 @@ class E160_robot:
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then right wheel positively correlated w/ velocity
             wheel_rotational_velocity_right_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
-            wheel_rotational_velocity_left_rad_per_sec = 0.5 * (self.w - (self.v/self.radius))
+            wheel_rotational_velocity_left_rad_per_sec = - 0.5 * (self.w - (self.v/self.radius))
 
             # 4b. Convert rotational velocities to wheel velocities in cm/s.
             robot_rotational_vel_to_wheel_rotational_vel_m_per_sec = 2*self.radius/self.wheel_radius
@@ -370,10 +379,16 @@ class E160_robot:
                              * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
                              * CONFIG_M_TO_CM)
 
-            # 4c. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
+            # 4c. max speed of 5 cm/s reduce other angle to allow same ratio
+            max_wheel_velocity = max(abs(wheel_velocity_right_cm_per_sec), abs(wheel_velocity_left_cm_per_sec))
+            if max_wheel_velocity > 5:
+                wheel_velocity_right_cm_per_sec *= (5/max_wheel_velocity)
+                wheel_velocity_left_cm_per_sec *= (5/max_wheel_velocity)
+            # 4d. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
             # TODO: Finish up map, design interpolation for cm to ticks conversion
-            wheel_velocity_right_ticks_per_sec = 0
-            wheel_velocity_left_ticks_per_sec  = 0
+            wheel_velocity_right_ticks_per_sec = wheel_velocity_right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+            wheel_velocity_left_ticks_per_sec  = wheel_velocity_left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+
 
 
             # 5. Check if we are close enough to desired destination
