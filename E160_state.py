@@ -7,8 +7,6 @@ class E160_state:
         self.set_state(x, y, theta)
         self.theta_cumulative = 0
         
-
-
     def set_state(self,x,y,theta):
         self.x = x
         self.y = y

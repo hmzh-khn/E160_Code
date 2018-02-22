@@ -339,12 +339,12 @@ class E160_robot:
 
             if(abs(Dx) < 0.01 and abs(Dy) < 0.01 and abs(Dtheta) < 0.1):
                 self.point_tracked = True
-                return 0 , 0
+                return (0, 0)
 
             # going forward if change in theta in [-pi/2, pi/2]
             is_forward = 1
             # going backward if in [-pi, -pi/2) or (pi/2, pi]
-            if abs(Dtheta) > math.pi/2:
+            if abs() > math.pi/2:
                 is_forward = -1
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
@@ -361,7 +361,7 @@ class E160_robot:
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then right wheel positively correlated w/ velocity
             wheel_rotational_velocity_right_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
-            wheel_rotational_velocity_left_rad_per_sec = - 0.5 * (self.w - (self.v/self.radius))
+            wheel_rotational_velocity_left_rad_per_sec = -0.5 * (self.w - (self.v/self.radius))
 
             # 4b. Convert rotational velocities to wheel velocities in cm/s.
             robot_rotational_vel_to_wheel_rotational_vel_m_per_sec = 2*self.radius/self.wheel_radius
