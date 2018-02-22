@@ -382,6 +382,7 @@ class E160_robot:
             if max_wheel_velocity > 5:
                 wheel_velocity_right_cm_per_sec *= (5/max_wheel_velocity)
                 wheel_velocity_left_cm_per_sec *= (5/max_wheel_velocity)
+                
             # 4d. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
             # TODO: Finish up map, design interpolation for cm to ticks conversion
             wheel_velocity_right_ticks_per_sec = wheel_velocity_right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
