@@ -46,9 +46,9 @@ class E160_robot:
         self.testing_power_R = 0
 
         # Lab 3
-        self.K_rho = 0.1#1.0
-        self.K_alpha = 0.2#2.0
-        self.K_beta = -0.05#-0.5
+        self.K_rho = 0.005#1.0
+        self.K_alpha = 0.02#2.0
+        self.K_beta = -0.005#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -128,7 +128,6 @@ class E160_robot:
             R = self.testing_power_R
             # R = self.R_motor_scaling_factor*self.testing_power_L
 
-            # print("specified power (L,R) - ", (L,R))
             L, R = self.rampSpeed(L, R, old_L, old_R)
             # power = 0
 
@@ -147,7 +146,6 @@ class E160_robot:
                 # do nothing
                 pass
 
-        # print("power (L,R) - ", (L,R), (old_L,old_R))
         return R, L
         
 
@@ -337,9 +335,15 @@ class E160_robot:
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
 
+            at_point = 1
+
             if(abs(Dx) < 0.01 and abs(Dy) < 0.01 and abs(Dtheta) < 0.1):
                 self.point_tracked = True
                 return (0, 0)
+
+            if(abs(Dx) < 0.01 and abs(Dy) < 0.01):
+                at_point = 10
+
 
             # going forward if change in theta in [-pi/2, pi/2]
             is_forward = 1
@@ -356,12 +360,13 @@ class E160_robot:
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
             self.v = is_forward * self.K_rho * distance_to_point
-            self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
 
+            self.w = self.K_alpha * angle_error + self.K_beta * at_point * negated_angle_final
+            print('angels',angle_error, negated_angle_final,Dtheta)
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
-            # Assuming CW is positive, then right wheel positively correlated w/ velocity
-            wheel_rotational_velocity_right_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
-            wheel_rotational_velocity_left_rad_per_sec = -0.5 * (self.w - (self.v/self.radius))
+            # Assuming CW is positive, then left wheel positively correlated w/ velocity
+            wheel_rotational_velocity_left_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
+            wheel_rotational_velocity_right_rad_per_sec = -0.5 * (self.w - (self.v/self.radius))
 
             # 4b. Convert rotational velocities to wheel velocities in cm/s.
             robot_rotational_vel_to_wheel_rotational_vel_m_per_sec = 2*self.radius/self.wheel_radius
@@ -382,7 +387,7 @@ class E160_robot:
             wheel_velocity_right_ticks_per_sec = wheel_velocity_right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
             wheel_velocity_left_ticks_per_sec  = wheel_velocity_left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
 
-
+            print(wheel_velocity_right_cm_per_sec, wheel_velocity_left_cm_per_sec)
 
             # 5. Check if we are close enough to desired destination
             # TODO: add a threshold
@@ -420,8 +425,6 @@ class E160_robot:
             ramped_delta_R = max(min(delta_R,CONFIG_RAMP_CONSTANT),-CONFIG_RAMP_CONSTANT)
             ramped_R = old_R + ramped_delta_R
 
-
-        # print("ramped power (L,R) - ", (ramped_L,ramped_R)) 
         return ramped_L, ramped_R
 
 

@@ -14,7 +14,7 @@ class E160_state:
 
     def add_theta(self, delta_theta):
     	self.theta_cumulative += delta_theta
-    	print(self.theta_cumulative, self.theta_cumulative/ (2 * math.pi) * CONFIG_DEGS_PER_REVOLUTION)
+    	#print(self.theta_cumulative, self.theta_cumulative/ (2 * math.pi) * CONFIG_DEGS_PER_REVOLUTION)
 
     def get_state_difference(self, destination_state):
         delta_x = self.x - destination_state.x
