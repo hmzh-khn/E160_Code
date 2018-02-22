@@ -327,21 +327,26 @@ class E160_robot:
 
         # If the desired point is not tracked yet, then track it
         if not self.point_tracked:
-            ############ Student code goes here ############################################
-            
+
             # 1. Calculate changes in x, y.
             self.difference_state = self.state_est.get_state_difference(self.state_des)
             Dx = self.difference_state.x
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
 
+            # TODO: Replace with config variable
             at_point = 1
 
-            if(abs(Dx) < 0.01 and abs(Dy) < 0.01 and abs(Dtheta) < 0.1):
+            if (abs(Dx) < CONFIG_DISTANCE_THRESHOLD_X_M 
+                and abs(Dy) < CONFIG_DISTANCE_THRESHOLD_Y_M
+                and abs(Dtheta) < CONFIG_ANGLE_THRESHOLD_RAD):
                 self.point_tracked = True
                 return (0, 0)
 
-            if(abs(Dx) < 0.01 and abs(Dy) < 0.01):
+            # if only rotation is needed, do so.
+            if(abs(Dx) < CONFIG_DISTANCE_THRESHOLD_X_M 
+                and abs(Dy) < CONFIG_DISTANCE_THRESHOLD_Y_M):
+                # TODO: Replace with config variable
                 at_point = 10
 
 
@@ -394,13 +399,30 @@ class E160_robot:
             # TODO: add a threshold
             self.point_tracked = False
 
-
-            
-        # the desired point has been tracked, so don't move
         else:
+            # the desired point has been tracked, so don't move
             pass
                 
         return wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec
+
+    while path_tracker()
+
+
+    def path_tracker(self, path):
+        """
+        A generator that, given a list of waypoints (E160_state objects), uses
+        ``point_tracker_control`` to follow the path.
+        """
+        current_point = 0
+        while current_point < len(path):
+            # if the previous point has 
+            if self.point_tracked:
+                self.state_des = point
+            self.point_tracker_control()
+            yield
+
+        # return 
+
 
     ############ END LAB 3 #################
 
