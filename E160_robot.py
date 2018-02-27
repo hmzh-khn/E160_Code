@@ -47,7 +47,7 @@ class E160_robot:
 
         # Lab 3
         self.K_rho = 0.005#1.0
-        self.K_alpha = 0.02#2.0
+        self.K_alpha = 0.03#2.0
         self.K_beta =  0.005#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
@@ -60,6 +60,7 @@ class E160_robot:
         # forward, rotational velocities
         self.v = 0.0
         self.w = 0.0
+        self.was_forward = 0
 
     def change_headers(self):
         self.make_headers()
@@ -325,6 +326,7 @@ class E160_robot:
         wheel_velocity_right_ticks_per_sec = 0
         wheel_velocity_left_ticks_per_sec  = 0
 
+
         # If the desired point is not tracked yet, then track it
         if not self.point_tracked:
 
@@ -334,6 +336,24 @@ class E160_robot:
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
 
+            # going forward from start if change in theta in [-pi/2, pi/2]
+            is_forward = 1
+            if(self.was_forward == 0):
+                # going backward if in [-pi, -pi/2) or (pi/2, pi]
+                if abs(math.atan2(Dy, Dx)) > math.pi/2:
+                    is_forward = -1
+            else:
+                if(self.was_forward == 1):
+                    if abs(math.atan2(Dy, Dx)) > 2.4 * math.pi/3:
+                        is_forward = -1
+                else:
+                    if abs(math.atan2(Dy, Dx)) < 0.6 * math.pi/3:
+                        is_forward = 1
+                    else:
+                        is_forward = -1       
+            #print('was: ',self.was_forward, 'is: ', is_forward, 'angle_error: ',abs(math.atan2(Dy, Dx)))
+
+            self.was_forward = is_forward
             # TODO: Replace with config variable
             at_point = 1
             care_about_tracjectory = 1
@@ -358,11 +378,7 @@ class E160_robot:
 
 
 
-            # going forward if change in theta in [-pi/2, pi/2]
-            is_forward = 1
-            # going backward if in [-pi, -pi/2) or (pi/2, pi]
-            if abs(math.atan2(Dy, Dx)) > math.pi/2:
-                is_forward = -1
+            
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
@@ -375,9 +391,9 @@ class E160_robot:
             self.v = is_forward * self.K_rho * distance_to_point
 
             self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
-            print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
-            
-            print('w: ',self.w,'v: ',self.v)
+            #print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
+            #print(angle_error)
+            #print('w: ',self.w,'v: ',self.v)
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then left wheel positively correlated w/ velocity
             wheel_rotational_velocity_left_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
@@ -472,6 +488,5 @@ class E160_robot:
             theta = theta - 2 * math.pi
         if theta < -math.pi:
             theta = 2*math.pi + theta
-        print("definitely not working yet")
         return theta
 

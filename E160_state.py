@@ -40,5 +40,4 @@ class E160_state:
             theta = theta - 2 * math.pi
         if theta < -math.pi:
             theta = 2*math.pi + theta
-        print("definitely not working yet")
         return theta
