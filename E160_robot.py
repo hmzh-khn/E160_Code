@@ -327,19 +327,19 @@ class E160_robot:
 
         # If the desired point is not tracked yet, then track it
         if not self.point_tracked:
-            ############ Student code goes here ############################################
-            
+
             # 1. Calculate changes in x, y.
             self.difference_state = self.state_est.get_state_difference(self.state_des)
             Dx = self.difference_state.x
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
 
+            # TODO: Replace with config variable
             at_point = 1
             care_about_tracjectory = 1
 
-            acceptable_distance = 0.01
-            acceptable_angle = acceptable_distance
+            acceptable_distance = CONFIG_DISTANCE_THRESHOLD_X_M 
+            acceptable_angle = CONFIG_ANGLE_THRESHOLD_RAD
             distance = math.sqrt(Dx**2 + Dy**2)
 
             if(distance < acceptable_distance and abs(Dtheta) < acceptable_angle):
@@ -355,6 +355,7 @@ class E160_robot:
                 at_point = 1
                 care_about_tracjectory = 0
                 print('switch to rotate control')
+
 
 
             # going forward if change in theta in [-pi/2, pi/2]
@@ -396,6 +397,7 @@ class E160_robot:
             if max_wheel_velocity > 5:
                 wheel_velocity_right_cm_per_sec *= (5/max_wheel_velocity)
                 wheel_velocity_left_cm_per_sec *= (5/max_wheel_velocity)
+                
             # 4d. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
             # TODO: Finish up map, design interpolation for cm to ticks conversion
             wheel_velocity_right_ticks_per_sec = wheel_velocity_right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
@@ -407,13 +409,30 @@ class E160_robot:
             # TODO: add a threshold
             self.point_tracked = False
 
-
-            
-        # the desired point has been tracked, so don't move
         else:
+            # the desired point has been tracked, so don't move
             pass
                 
         return wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec
+
+    while path_tracker()
+
+
+    def path_tracker(self, path):
+        """
+        A generator that, given a list of waypoints (E160_state objects), uses
+        ``point_tracker_control`` to follow the path.
+        """
+        current_point = 0
+        while current_point < len(path):
+            # if the previous point has 
+            if self.point_tracked:
+                self.state_des = point
+            self.point_tracker_control()
+            yield
+
+        # return 
+
 
     ############ END LAB 3 #################
 
