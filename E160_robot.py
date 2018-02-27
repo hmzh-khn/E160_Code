@@ -48,7 +48,7 @@ class E160_robot:
         # Lab 3
         self.K_rho = 0.005#1.0
         self.K_alpha = 0.02#2.0
-        self.K_beta = -0.0005#-0.5
+        self.K_beta =  0.005#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -368,8 +368,8 @@ class E160_robot:
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
             angle_error = (-self.state_est.theta + math.atan2(is_forward * Dy, 
                                                              is_forward * Dx)) * care_about_tracjectory
-            negated_angle_final = -self.state_est.theta - angle_error + self.state_des.theta
-            #negated_angle_final = self.short_angle(negated_angle_final)
+            negated_angle_final = -self.state_est.theta + self.state_des.theta
+            negated_angle_final = self.short_angle(negated_angle_final)
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
             self.v = is_forward * self.K_rho * distance_to_point
@@ -415,7 +415,7 @@ class E160_robot:
                 
         return wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec
 
-    while path_tracker()
+    #while path_tracker()
 
 
     def path_tracker(self, path):
