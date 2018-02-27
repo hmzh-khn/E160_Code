@@ -48,7 +48,7 @@ class E160_robot:
         # Lab 3
         self.K_rho = 0.005#1.0
         self.K_alpha = 0.02#2.0
-        self.K_beta = -0.005#-0.5
+        self.K_beta = -0.0005#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -336,13 +336,25 @@ class E160_robot:
             Dtheta = self.difference_state.theta
 
             at_point = 1
+            care_about_tracjectory = 1
 
-            if(abs(Dx) < 0.01 and abs(Dy) < 0.01 and abs(Dtheta) < 0.1):
+            acceptable_distance = 0.01
+            acceptable_angle = acceptable_distance
+            distance = math.sqrt(Dx**2 + Dy**2)
+
+            if(distance < acceptable_distance and abs(Dtheta) < acceptable_angle):
                 self.point_tracked = True
                 return (0, 0)
 
-            if(abs(Dx) < 0.01 and abs(Dy) < 0.01):
-                at_point = 10
+            if(distance < acceptable_distance):
+                at_point = 1
+                care_about_tracjectory = max((distance - acceptable_distance/2) / acceptable_distance , 0)
+                print('switch to reduced distance')
+
+            if(distance< acceptable_distance/2):
+                at_point = 1
+                care_about_tracjectory = 0
+                print('switch to rotate control')
 
 
             # going forward if change in theta in [-pi/2, pi/2]
@@ -353,16 +365,18 @@ class E160_robot:
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
-            angle_error = -self.state_est.theta + math.atan2(is_forward * Dy, 
-                                                             is_forward * Dx)
-            negated_angle_final = -self.state_est.theta - angle_error
-
+            angle_error = (-self.state_est.theta + math.atan2(is_forward * Dy, 
+                                                             is_forward * Dx)) * care_about_tracjectory
+            negated_angle_final = -self.state_est.theta - angle_error + self.state_des.theta
+            #negated_angle_final = self.short_angle(negated_angle_final)
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
             self.v = is_forward * self.K_rho * distance_to_point
 
-            self.w = self.K_alpha * angle_error + self.K_beta * at_point * negated_angle_final
-            print('angels',angle_error, negated_angle_final,Dtheta)
+            self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
+            print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
+            
+            print('w: ',self.w,'v: ',self.v)
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then left wheel positively correlated w/ velocity
             wheel_rotational_velocity_left_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
@@ -432,3 +446,13 @@ class E160_robot:
         
         self.manual_control_right_motor = int(R*256/100)
         self.manual_control_left_motor = int(L*256/100)
+
+       #concern could mess up the final orientaton
+    def short_angle(self,theta):
+        if theta > math.pi:
+            theta = theta - 2 * math.pi
+        if theta < -math.pi:
+            theta = 2*math.pi + theta
+        print("definitely not working yet")
+        return theta
+
