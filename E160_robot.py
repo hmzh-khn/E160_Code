@@ -403,12 +403,7 @@ class E160_robot:
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
             self.v = is_forward * self.K_rho * distance_to_point
-<<<<<<< HEAD
-
             self.w = self.K_alpha * angle_error + beta_local * negated_angle_final
-=======
-            self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
->>>>>>> 13fcf8bb0e5f273fa8eec5519a0467d6652cc66d
             #print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
             #print(angle_error)
             #print('w: ',self.w,'v: ',self.v)
