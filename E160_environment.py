@@ -11,7 +11,7 @@ class E160_environment:
     
     def __init__(self):
         self.width = 2.0
-        self.height = 1.2 # was 2.0 in old code, change for lab 3
+        self.height = 2.0 # was 2.0 in old code, change for lab 3
         
         # set up walls, putting top left point first
         self.walls = []

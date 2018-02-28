@@ -3,6 +3,7 @@ from E160_config import *
 from E160_state import *
 import math
 import datetime
+import time
 
 
 class E160_robot:
@@ -18,6 +19,7 @@ class E160_robot:
         self.path = []
         self.path_current_pos = 0
         self.is_path_tracked = False
+        self.path_tracking_pause_duration = 0
 
         self.R = 0
         self.L = 0
@@ -52,8 +54,8 @@ class E160_robot:
 
         # Lab 3
         self.K_rho = 0.005#1.0
-        self.K_alpha = 0.03#2.0
-        self.K_beta =  -0.005#-0.5
+        self.K_alpha = 0.04#2.0
+        self.K_beta =  -0.01#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -385,21 +387,27 @@ class E160_robot:
                 return (0, 0)
 
             if(distance < acceptable_distance):
-                at_point = 0
                 beta_local = -self.K_beta
-                care_about_tracjectory = max((distance - acceptable_distance/2) / acceptable_distance , 0)
+                care_about_tracjectory = max((distance - acceptable_distance/2) / acceptable_distance, 0)
                 print('switch to reduced distance')
+
+            if(distance < 2*acceptable_distance):
+                at_point = 0
+                print('switch to rotate control 2')
 
             if(distance < acceptable_distance/2):
                 care_about_tracjectory = 0
-                print('switch to rotate control')
+                print('switch to rotate control 0.5')
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
             angle_error = (-self.state_est.theta + math.atan2(is_forward * Dy, 
                                                              is_forward * Dx)) * care_about_tracjectory
             negated_angle_final = -self.state_est.theta + angle_error * at_point + self.state_des.theta
-            negated_angle_final = self.short_angle(negated_angle_final)
+            # RENAME THIS VARIABLE
+            if at_point == 0:
+                negated_angle_final = self.short_angle(negated_angle_final)
+
             print(negated_angle_final)
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
@@ -466,6 +474,8 @@ class E160_robot:
             # if the previous point has been reached, go to the next point
             if self.point_tracked:
                 self.path_current_pos += 1
+                # slight delay for testing reasons
+                time.sleep(self.path_tracking_pause_duration)
             self.point_tracked = False
 
             # not all checkpoints reached

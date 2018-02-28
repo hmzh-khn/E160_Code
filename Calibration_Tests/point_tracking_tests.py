@@ -18,8 +18,56 @@ import time
 
 IS_DEBUG = True
 
-PATH = [(1,0,0), (-1,0,0)]
-PATH = [E160_state(x=point) for point in PATH]
+RESET_STATE = (0,0,0)
+
+# 1. Go straight forward (0,0,0) --> (-1,0,0)
+TEST1 = [(-1,0,0), RESET_STATE]
+
+# 2. Go straight backward (0,0,0) --> (1,0,0)
+TEST2 = [(1,0,0), RESET_STATE]
+
+# 3a. Rotate (0,0,0) --> (0,0,1rad)
+TEST3a = [(0,0,1), RESET_STATE]
+
+# 3b. Rotate along shortest direction (0,0,0) --> (0,0,pi) --> (0,0,-pi)
+TEST3b = [(0,0,3), (0,0,-3), RESET_STATE]
+
+# 3c. Rotate (0,0,0) --> (0,0,pi/2)
+TEST3c = [(0,0,1.57), RESET_STATE]
+
+# 3d. Rotate (0,0,0) --> (0,0,-pi/4)
+TEST3d = [(0,0,1.57/2), RESET_STATE]
+
+# 4a. Perpendicular (0,0,0) -> (0,1,0)
+TEST4a = [(0,1,0), RESET_STATE]
+
+# 4b. Perpendicular (0,0,0) -> (0,-1,0)
+TEST4b = [(0,-0.5,0), RESET_STATE]
+
+# 5. Diagonal (0,0,0) -> (1,1,0)
+TEST5 = [(1,1,0), RESET_STATE]
+
+# 6. Close Spot (0,0,0) -> (-0.1,-0.1,0)
+TEST6 = [(-0.1,-0.1,0), RESET_STATE]
+
+MAIN_TESTS = (
+              TEST1 + 
+              TEST2 + 
+              TEST3a + 
+              TEST3b + 
+              TEST3c + 
+              TEST3d + 
+              TEST4a + # very jerky, but works
+              TEST4b + # very jerky, but works
+              TEST5 + 
+              TEST6)
+
+
+# TEST_PATH = [(1,0,0), (-1,0,0)]
+
+
+DESIRED_COORDS = MAIN_TESTS
+PATH = [E160_state(x=point) for point in DESIRED_COORDS]
 
 def runRobot(env, graphics=None, deltaT=CONFIG_DELTA_T):
   if graphics:
@@ -45,6 +93,7 @@ if __name__ == "__main__":
 
   robot = env.robots[0]
   robot.path = PATH
+  robot.path_tracking_pause_duration = 1 # sec
   # path_tracking = robot.create_path_tracker(PATH)
 
   # robot.point_tracked = False
