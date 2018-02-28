@@ -381,6 +381,7 @@ class E160_robot:
 
             if(distance < acceptable_distance and abs(Dtheta) < acceptable_angle):
                 self.point_tracked = True
+                self.was_forward = 0
                 return (0, 0)
 
             if(distance < acceptable_distance):
