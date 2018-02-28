@@ -4,6 +4,9 @@ from E160_config import CONFIG_DEGS_PER_REVOLUTION
 class E160_state:
 
     def __init__(self, x=0, y=0, theta=0):
+        if isinstance(x, tuple):
+            x, y, theta = x
+
         self.set_state(x, y, theta)
         self.theta_cumulative = 0
         
