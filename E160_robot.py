@@ -48,7 +48,7 @@ class E160_robot:
         # Lab 3
         self.K_rho = 0.005#1.0
         self.K_alpha = 0.03#2.0
-        self.K_beta =  0.005#-0.5
+        self.K_beta =  -0.005#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -361,18 +361,19 @@ class E160_robot:
             acceptable_distance = CONFIG_DISTANCE_THRESHOLD_X_M 
             acceptable_angle = CONFIG_ANGLE_THRESHOLD_RAD
             distance = math.sqrt(Dx**2 + Dy**2)
+            beta_local = self.K_beta
 
             if(distance < acceptable_distance and abs(Dtheta) < acceptable_angle):
                 self.point_tracked = True
                 return (0, 0)
 
             if(distance < acceptable_distance):
-                at_point = 1
+                at_point = 0
+                beta_local = -self.K_beta
                 care_about_tracjectory = max((distance - acceptable_distance/2) / acceptable_distance , 0)
                 print('switch to reduced distance')
 
-            if(distance< acceptable_distance/2):
-                at_point = 1
+            if(distance < acceptable_distance/2):
                 care_about_tracjectory = 0
                 print('switch to rotate control')
 
@@ -384,13 +385,14 @@ class E160_robot:
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
             angle_error = (-self.state_est.theta + math.atan2(is_forward * Dy, 
                                                              is_forward * Dx)) * care_about_tracjectory
-            negated_angle_final = -self.state_est.theta + self.state_des.theta
+            negated_angle_final = -self.state_est.theta + angle_error * at_point + self.state_des.theta
             negated_angle_final = self.short_angle(negated_angle_final)
+            print(negated_angle_final)
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
             self.v = is_forward * self.K_rho * distance_to_point
 
-            self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
+            self.w = self.K_alpha * angle_error + beta_local * negated_angle_final
             #print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
             #print(angle_error)
             #print('w: ',self.w,'v: ',self.v)
