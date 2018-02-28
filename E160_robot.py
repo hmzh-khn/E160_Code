@@ -14,6 +14,11 @@ class E160_robot:
         self.state_des = E160_state()
         self.state_des.set_state(0,0,0)
 
+        self.path_tracker = None
+        self.path = []
+        self.path_current_pos = 0
+        self.is_path_tracked = False
+
         self.R = 0
         self.L = 0
         self.radius = 0.147 / 2
@@ -142,7 +147,7 @@ class E160_robot:
 
             elif CONFIG_LAB_NUMBER == 3:
                 R, L = self.lab3_controller(range_measurements)
-                pass
+
             else:
                 # do nothing
                 pass
@@ -315,13 +320,22 @@ class E160_robot:
             desiredWheelSpeedR = self.manual_control_right_motor
             desiredWheelSpeedL = self.manual_control_left_motor
             
-        elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":   
-            desiredWheelSpeedR, desiredWheelSpeedL = self.point_tracker_control()
-            
+        elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
+            self.path_tracker = self.create_path_tracker(self.path)
+
+            desiredWheelSpeedR, desiredWheelSpeedL = (0, 0)
+
+            if self.is_path_tracked:
+                self.path_current_pos = 0
+            else:
+                desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
+
         return desiredWheelSpeedR, desiredWheelSpeedL
 
 
     def point_tracker_control(self):
+        # print('point tracking', self.state_des, self.point_tracked)
+        # print(self.state_des)
 
         wheel_velocity_right_ticks_per_sec = 0
         wheel_velocity_left_ticks_per_sec  = 0
@@ -354,6 +368,8 @@ class E160_robot:
             #print('was: ',self.was_forward, 'is: ', is_forward, 'angle_error: ',abs(math.atan2(Dy, Dx)))
 
             self.was_forward = is_forward
+
+
             # TODO: Replace with config variable
             at_point = 1
             care_about_tracjectory = 1
@@ -376,10 +392,6 @@ class E160_robot:
                 care_about_tracjectory = 0
                 print('switch to rotate control')
 
-
-
-            
-
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
             angle_error = (-self.state_est.theta + math.atan2(is_forward * Dy, 
@@ -389,11 +401,11 @@ class E160_robot:
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
             self.v = is_forward * self.K_rho * distance_to_point
-
             self.w = self.K_alpha * angle_error + self.K_beta * negated_angle_final
             #print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
             #print(angle_error)
             #print('w: ',self.w,'v: ',self.v)
+
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then left wheel positively correlated w/ velocity
             wheel_rotational_velocity_left_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
@@ -419,7 +431,7 @@ class E160_robot:
             wheel_velocity_right_ticks_per_sec = wheel_velocity_right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
             wheel_velocity_left_ticks_per_sec  = wheel_velocity_left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
 
-            print(wheel_velocity_right_cm_per_sec, wheel_velocity_left_cm_per_sec)
+            # print(wheel_velocity_right_cm_per_sec, wheel_velocity_left_cm_per_sec)
 
             # 5. Check if we are close enough to desired destination
             # TODO: add a threshold
@@ -431,23 +443,35 @@ class E160_robot:
                 
         return wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec
 
-    #while path_tracker()
 
-
-    def path_tracker(self, path):
+    def create_path_tracker(self, path):
         """
         A generator that, given a list of waypoints (E160_state objects), uses
         ``point_tracker_control`` to follow the path.
         """
-        current_point = 0
-        while current_point < len(path):
-            # if the previous point has 
-            if self.point_tracked:
-                self.state_des = point
-            self.point_tracker_control()
-            yield
+        self.point_tracked = False
+        self.is_path_tracked = False
+        right_power, left_power = (0, 0)
 
-        # return 
+        while not self.is_path_tracked:
+            point = path[self.path_current_pos]
+            self.state_des = point
+
+            # track the point for one iteration
+            right_power, left_power = self.point_tracker_control()
+
+            # if the previous point has been reached, go to the next point
+            if self.point_tracked:
+                self.path_current_pos += 1
+            self.point_tracked = False
+
+            # not all checkpoints reached
+            self.is_path_tracked = not(self.path_current_pos < len(path))
+
+            yield right_power, left_power
+
+        self.is_path_tracked = True
+        yield right_power, left_power
 
 
     ############ END LAB 3 #################
@@ -476,13 +500,13 @@ class E160_robot:
 
         return ramped_L, ramped_R
 
-
     def set_manual_control_motors(self, R, L):
         
         self.manual_control_right_motor = int(R*256/100)
         self.manual_control_left_motor = int(L*256/100)
 
        #concern could mess up the final orientaton
+    
     def short_angle(self,theta):
         if theta > math.pi:
             theta = theta - 2 * math.pi
