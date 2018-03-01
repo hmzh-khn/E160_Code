@@ -274,7 +274,6 @@ class E160_robot:
         f.close()
 
         
-        
     def log_data(self):
         f = open(self.file_name, 'a+')
 
@@ -362,16 +361,18 @@ class E160_robot:
 
             # going forward from start if change in theta in [-pi/2, pi/2]
             is_forward = 1
+            # if difference between heading and destination angle is greater than pi, set whether or not to go forward
+            heading_dest_angle_difference = abs(self.normalize_angle(math.atan2(Dy, Dx) - self.state_est.theta))
             if(self.was_forward == 0):
                 # going backward if in [-pi, -pi/2) or (pi/2, pi]
-                if abs(math.atan2(Dy, Dx)) > math.pi/2:
+                if heading_dest_angle_difference > math.pi/2:
                     is_forward = -1
             else:
                 if(self.was_forward == 1):
-                    if abs(math.atan2(Dy, Dx)) > 2.4 * math.pi/3:
+                    if heading_dest_angle_difference > 2.4 * math.pi/3:
                         is_forward = -1
                 else:
-                    if abs(math.atan2(Dy, Dx)) < 0.6 * math.pi/3:
+                    if heading_dest_angle_difference < 0.6 * math.pi/3:
                         is_forward = 1
                     else:
                         is_forward = -1       
@@ -381,8 +382,8 @@ class E160_robot:
 
 
             # TODO: Replace with config variable
-            at_point = 1
-            care_about_tracjectory = 1
+            at_point = 0
+            care_about_trajectory = 1
 
             acceptable_distance = CONFIG_DISTANCE_THRESHOLD_X_M 
             acceptable_angle = CONFIG_ANGLE_THRESHOLD_RAD
@@ -395,31 +396,32 @@ class E160_robot:
                 return (0, 0)
 
             if(distance < acceptable_distance):
-                beta_local = -self.K_beta
-                care_about_tracjectory = max((distance - acceptable_distance/2) / acceptable_distance, 0)
+                # care_about_trajectory = max((distance - acceptable_distance/2) / (acceptable_distance/2), 0)
                 print('switch to reduced distance')
 
             if(distance < 2*acceptable_distance):
-                at_point = 0
+                at_point = 1
                 print('switch to rotate control 2')
 
             if(distance < acceptable_distance/2):
-                care_about_tracjectory = 0
+                care_about_trajectory = 0
+                # can switch K_beta to be positive after translation is over
+                beta_local = -self.K_beta
                 print('switch to rotate control 0.5')
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
             angle_error = (-self.state_est.theta + math.atan2(is_forward * Dy, 
-                                                             is_forward * Dx)) * care_about_tracjectory
+                                                             is_forward * Dx)) * care_about_trajectory
             negated_angle_final = -self.state_est.theta + angle_error * at_point + self.state_des.theta
             # RENAME THIS VARIABLE
-            if at_point == 0:
+            if at_point == 1:
                 negated_angle_final = self.short_angle(negated_angle_final)
 
             print(negated_angle_final)
             # 3. Identify desired velocities (bound by max velocity)
             # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
-            self.v = is_forward * self.K_rho * distance_to_point
+            self.v = care_about_trajectory * is_forward * self.K_rho * distance_to_point
             self.w = self.K_alpha * angle_error + beta_local * negated_angle_final
             #print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
             #print(angle_error)

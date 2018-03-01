@@ -68,7 +68,7 @@ MAIN_TESTS = (
 
 # DESIRED_COORDS = MAIN_TESTS
 DESIRED_COORDS = [(0.25,0.25,0), RESET_STATE, (0,0.25,0), RESET_STATE, (0,0,2.7), (0,0,-2.7), (0,0,2.7), RESET_STATE, (-0.25,0,3.14), (0,0,3.14)]
-PATH = [E160_state(x=point) for point in DESIRED_COORDS]
+PATH = [E160_state(x=point) for point in DESIRED_COORDS ]
 
 def runRobot(env, graphics=None, deltaT=CONFIG_DELTA_T):
   if graphics:
