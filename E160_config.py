@@ -83,6 +83,12 @@ CONFIG_DISTANCE_THRESHOLD_X_M = 0.05
 CONFIG_DISTANCE_THRESHOLD_Y_M = 0.05
 CONFIG_ANGLE_THRESHOLD_RAD = 0.05
 
+def CONFIG_IN_HARDWARE_MODE(robot_mode):
+  return robot_mode == HARDWARE_MODE
+
+def CONFIG_IN_SIMULATION_MODE(robot_mode):
+  return robot_mode == SIMULATION_MODE
+
 
 """
 Tick maps (cm per tick)
