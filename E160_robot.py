@@ -4,6 +4,7 @@ from E160_state import *
 import math
 import datetime
 import time
+import random
 
 
 class E160_robot:
@@ -53,9 +54,9 @@ class E160_robot:
         self.testing_power_R = 0
 
         # Lab 3
-        self.K_rho = 0.005#1.0
-        self.K_alpha = 0.04#2.0
-        self.K_beta =  -0.01#-0.5
+        self.K_rho = 0.5#1.0
+        self.K_alpha = 0.4#2.0
+        self.K_beta =  -0.05#-0.5
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -442,8 +443,8 @@ class E160_robot:
             wheel_velocity_right_ticks_per_sec = wheel_velocity_right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
             wheel_velocity_left_ticks_per_sec  = wheel_velocity_left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
 
-            # print(wheel_velocity_right_cm_per_sec, wheel_velocity_left_cm_per_sec)
 
+            print(wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec)
             # 5. Check if we are close enough to desired destination
             # TODO: add a threshold
             self.point_tracked = False

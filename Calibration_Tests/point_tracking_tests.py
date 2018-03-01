@@ -21,13 +21,13 @@ IS_DEBUG = True
 RESET_STATE = (0,0,0)
 
 # 1. Go straight forward (0,0,0) --> (-1,0,0)
-TEST1 = [(-1,0,0), RESET_STATE]
+TEST1 = [(-0.25,0,0), RESET_STATE]
 
 # 2. Go straight backward (0,0,0) --> (1,0,0)
-TEST2 = [(1,0,0), RESET_STATE]
+TEST2 = [(0.25,0,0), RESET_STATE]
 
 # 3a. Rotate (0,0,0) --> (0,0,1rad)
-TEST3a = [(0,0,1), RESET_STATE]
+TEST3a = [(0,0,0.25), RESET_STATE]
 
 # 3b. Rotate along shortest direction (0,0,0) --> (0,0,pi) --> (0,0,-pi)
 TEST3b = [(0,0,3), (0,0,-3), RESET_STATE]
@@ -39,13 +39,13 @@ TEST3c = [(0,0,1.57), RESET_STATE]
 TEST3d = [(0,0,1.57/2), RESET_STATE]
 
 # 4a. Perpendicular (0,0,0) -> (0,1,0)
-TEST4a = [(0,1,0), RESET_STATE]
+TEST4a = [(0,0.25,0), RESET_STATE]
 
 # 4b. Perpendicular (0,0,0) -> (0,-1,0)
-TEST4b = [(0,-0.5,0), RESET_STATE]
+TEST4b = [(0,-0.25,0), RESET_STATE]
 
 # 5. Diagonal (0,0,0) -> (1,1,0)
-TEST5 = [(1,1,0), RESET_STATE]
+TEST5 = [(0.25,0.25,0), RESET_STATE]
 
 # 6. Close Spot (0,0,0) -> (-0.1,-0.1,0)
 TEST6 = [(-0.1,-0.1,0), RESET_STATE]
