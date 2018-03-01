@@ -51,8 +51,8 @@ TEST5 = [(1,1,0), RESET_STATE]
 TEST6 = [(-0.1,-0.1,0), RESET_STATE]
 
 MAIN_TESTS = (
-              TEST1 + 
-              TEST2 + 
+              # TEST1 + 
+              # TEST2 + 
               TEST3a + 
               TEST3b + 
               TEST3c + 
@@ -66,7 +66,8 @@ MAIN_TESTS = (
 # TEST_PATH = [(1,0,0), (-1,0,0)]
 
 
-DESIRED_COORDS = MAIN_TESTS
+# DESIRED_COORDS = MAIN_TESTS
+DESIRED_COORDS = [(0.25,0.25,0), RESET_STATE, (0,0.25,0), RESET_STATE, (0,0,2.7), (0,0,-2.7), (0,0,2.7), RESET_STATE, (-0.25,0,3.14), (0,0,3.14)]
 PATH = [E160_state(x=point) for point in DESIRED_COORDS]
 
 def runRobot(env, graphics=None, deltaT=CONFIG_DELTA_T):

@@ -16,7 +16,7 @@ class E160_robot:
         self.state_des.set_state(0,0,0)
 
         self.path_tracker = None
-        self.path = []
+        self.path = [(E160_state(0,0,0))]
         self.path_current_pos = 0
         self.is_path_tracked = False
         self.path_tracking_pause_duration = 0
@@ -53,9 +53,16 @@ class E160_robot:
         self.testing_power_R = 0
 
         # Lab 3
-        self.K_rho = 0.005#1.0
-        self.K_alpha = 0.04#2.0
-        self.K_beta =  -0.01#-0.5
+        if CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
+            self.K_rho = 0.005#1.0
+            self.K_alpha = 0.04#2.0
+            self.K_beta =  -0.01#-0.5
+
+        if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
+            self.K_rho = 0.005#1.0
+            self.K_alpha = 0.04#2.0
+            self.K_beta =  -0.01#-0.5
+
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
@@ -94,7 +101,7 @@ class E160_robot:
     
     def update_sensor_measurements(self, deltaT):
         
-        if self.environment.robot_mode == "HARDWARE MODE":
+        if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
             command = '$S @'
             self.environment.xbee.tx(dest_addr=self.address, data=command)
             
@@ -106,7 +113,7 @@ class E160_robot:
             range_measurements = data[:-2]
         
         # obtain sensor measurements
-        elif self.environment.robot_mode == "SIMULATION MODE":
+        elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
             range_measurements = [0,0,0]
         
