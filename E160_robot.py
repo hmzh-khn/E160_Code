@@ -273,7 +273,6 @@ class E160_robot:
         f.close()
 
         
-        
     def log_data(self):
         f = open(self.file_name, 'a+')
 
@@ -396,16 +395,17 @@ class E160_robot:
                 return (0, 0)
 
             if(distance < acceptable_distance):
-                # care_about_trajectory = max((distance - acceptable_distance/2) / acceptable_distance, 0)
+                # care_about_trajectory = max((distance - acceptable_distance/2) / (acceptable_distance/2), 0)
                 print('switch to reduced distance')
 
             if(distance < 2*acceptable_distance):
-                beta_local = -self.K_beta
                 at_point = 1
                 print('switch to rotate control 2')
 
             if(distance < acceptable_distance/2):
                 care_about_trajectory = 0
+                # can switch K_beta to be positive after translation is over
+                beta_local = -self.K_beta
                 print('switch to rotate control 0.5')
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
