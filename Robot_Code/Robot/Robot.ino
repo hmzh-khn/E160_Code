@@ -235,10 +235,16 @@ void controlTicks(int motorCmds[]) {
   motorCmds[0] = controlLeft >= 0;
   motorCmds[1] = (int) fabs(controlLeft);
   // account for dead zone
-  motorCmds[1] = (motorCmds[1] <= DEAD_ZONE_POWER)? 0:motorCmds[1];
+  //motorCmds[1] = (motorCmds[1] <= DEAD_ZONE_POWER)? 0:motorCmds[1];
+  if(motorCmds[1] <= DEAD_ZONE_POWER && motorCmds[1] > rand(DEAD_ZONE_POWER)) {
+    motorCmds[1] = DEAD_ZONE_POWER
+  }
   motorCmds[2] = controlRight >= 0;
   motorCmds[3] = (int) fabs(controlRight);
-  motorCmds[3] = (motorCmds[3] <= DEAD_ZONE_POWER)? 0:motorCmds[3];
+  // motorCmds[3] = (motorCmds[3] <= DEAD_ZONE_POWER)? 0:motorCmds[3];
+  if(motorCmds[3] <= DEAD_ZONE_POWER && motorCmds[3] > rand(DEAD_ZONE_POWER)) {
+    motorCmds[3] = DEAD_ZONE_POWER
+  }
 }
 
 void sendSensorData() {

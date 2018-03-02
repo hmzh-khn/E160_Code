@@ -60,9 +60,9 @@ class E160_robot:
             self.K_beta =  -0.01#-0.5
 
         if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
-            self.K_rho = 0.005#1.0
-            self.K_alpha = 0.04#2.0
-            self.K_beta =  -0.01#-0.5
+            self.K_rho = 0.5#1.0
+            self.K_alpha = 0.4#2.0
+            self.K_beta =  -0.1#-0.5
 
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
@@ -369,10 +369,10 @@ class E160_robot:
                     is_forward = -1
             else:
                 if(self.was_forward == 1):
-                    if heading_dest_angle_difference > 2.4 * math.pi/3:
+                    if heading_dest_angle_difference > 3 * math.pi/4:
                         is_forward = -1
                 else:
-                    if heading_dest_angle_difference < 0.6 * math.pi/3:
+                    if heading_dest_angle_difference < 1 * math.pi/4:
                         is_forward = 1
                     else:
                         is_forward = -1       
