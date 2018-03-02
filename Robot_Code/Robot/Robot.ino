@@ -1,6 +1,6 @@
 #define USE_TEENSY_HW_SERIAL
 #include <vector>
-#include<Encoder.h>
+#include <Encoder.h>
 
 const int RDIR = 11;
 const int RPWM = 10;
@@ -14,7 +14,7 @@ const int ERB = 7;
 const int ELA = 8;
 const int ELB = 9;
 
-const float DEAD_ZONE_POWER = 3*(256.0/100.0);
+const int DEAD_ZONE_POWER = 8; //3*(256.0/100.0);
 
 /* PID control constants */
 const float Kp = 0.1;
@@ -236,14 +236,14 @@ void controlTicks(int motorCmds[]) {
   motorCmds[1] = (int) fabs(controlLeft);
   // account for dead zone
   //motorCmds[1] = (motorCmds[1] <= DEAD_ZONE_POWER)? 0:motorCmds[1];
-  if(motorCmds[1] <= DEAD_ZONE_POWER && motorCmds[1] > rand(DEAD_ZONE_POWER)) {
-    motorCmds[1] = DEAD_ZONE_POWER
+  if(motorCmds[1] <= DEAD_ZONE_POWER && motorCmds[1] > (rand()%DEAD_ZONE_POWER)) {
+    motorCmds[1] = DEAD_ZONE_POWER;
   }
   motorCmds[2] = controlRight >= 0;
   motorCmds[3] = (int) fabs(controlRight);
   // motorCmds[3] = (motorCmds[3] <= DEAD_ZONE_POWER)? 0:motorCmds[3];
-  if(motorCmds[3] <= DEAD_ZONE_POWER && motorCmds[3] > rand(DEAD_ZONE_POWER)) {
-    motorCmds[3] = DEAD_ZONE_POWER
+  if(motorCmds[3] <= DEAD_ZONE_POWER && motorCmds[3] > (rand()%DEAD_ZONE_POWER)) {
+    motorCmds[3] = DEAD_ZONE_POWER;
   }
 }
 

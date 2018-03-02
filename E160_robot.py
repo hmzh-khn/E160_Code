@@ -11,16 +11,12 @@ class E160_robot:
 
     def __init__(self, environment, address, robot_id):
         self.environment = environment
+
+        # state estimation and destination
         self.state_est = E160_state()
         self.state_est.set_state(0,0,0)
         self.state_des = E160_state()
         self.state_des.set_state(0,0,0)
-
-        self.path_tracker = None
-        self.path = [(E160_state(0,0,0))]
-        self.path_current_pos = 0
-        self.is_path_tracked = False
-        self.path_tracking_pause_duration = 0
 
         self.R = 0
         self.L = 0
@@ -54,6 +50,7 @@ class E160_robot:
         self.testing_power_R = 0
 
         # Lab 3
+        # point tracking
         if CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             self.K_rho = 0.005#1.0
             self.K_alpha = 0.04#2.0
@@ -67,6 +64,13 @@ class E160_robot:
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
         self.encoder_per_sec_to_rad_per_sec = 10
+
+        # path tracking
+        self.path_tracker = None
+        self.path = [(E160_state(0,0,0))]
+        self.path_current_pos = 0
+        self.is_path_tracked = False
+        self.path_tracking_pause_duration = 0
 
         # state that monitors difference between desired state, estimated state
         self.difference_state = E160_state()
@@ -158,9 +162,14 @@ class E160_robot:
             elif CONFIG_LAB_NUMBER == 3:
                 R, L = self.lab3_controller(range_measurements)
 
-            else:
-                # do nothing
+            elif CONFIG_LAB_NUMBER == 4:
                 pass
+
+            elif CONFIG_LAB_NUMBER == 5:
+                pass
+
+            else:
+                print('Inappropriate lab number specified. Please enter a number from 1-5.')
 
         return R, L
         
@@ -265,7 +274,7 @@ class E160_robot:
         
         
         
-        
+    ######## DATA LOGGING ########  
     def make_headers(self):
         f = open(self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
@@ -283,13 +292,14 @@ class E160_robot:
         
         f.write(' '.join(data) + '\n')
         f.close()
-        
+    ###### END DATA LOGGING ######    
         
     def set_manual_control_motors(self, R, L):
         self.manual_control_right_motor = int(R*256/100)
         self.manual_control_left_motor = int(L*256/100)  
 
 
+    ###### LAB CONTROLLERS ######
     def lab1_controller(self, range_measurements):
         # Lab 1 control code
         if range_measurements[0] > 0:
@@ -319,11 +329,11 @@ class E160_robot:
             power = sign * min(power, CONFIG_MAX_POWER)
             power = sign * max(power, CONFIG_MIN_POWER)
 
-                      
+             
     def lab2_controller(self, range_measurements):
         pass
 
-    ############ LAB 3 #################
+    # LAB 3
     def lab3_controller(self, range_measurements):
         if self.environment.control_mode == "MANUAL CONTROL MODE":
             desiredWheelSpeedR = self.manual_control_right_motor
@@ -340,14 +350,15 @@ class E160_robot:
                 desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
 
         return desiredWheelSpeedR, desiredWheelSpeedL
+    ###### END LAB CONTROLLERS ######
 
-
+    ###### LAB 3 HELPER FUNCTIONS ######
     def point_tracker_control(self):
         # print('point tracking', self.state_des, self.point_tracked)
         # print(self.state_des)
 
-        wheel_velocity_right_ticks_per_sec = 0
-        wheel_velocity_left_ticks_per_sec  = 0
+        right_ticks_per_sec = 0
+        left_ticks_per_sec  = 0
 
 
         # If the desired point is not tracked yet, then track it
@@ -358,6 +369,8 @@ class E160_robot:
             Dx = self.difference_state.x
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
+
+            # is_forward = self._select_forward_or_backward
 
             # going forward from start if change in theta in [-pi/2, pi/2]
             is_forward = 1
@@ -429,28 +442,28 @@ class E160_robot:
 
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then left wheel positively correlated w/ velocity
-            wheel_rotational_velocity_left_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
-            wheel_rotational_velocity_right_rad_per_sec = -0.5 * (self.w - (self.v/self.radius))
+            left_rad_per_sec = 0.5 * (self.w + (self.v/self.radius))
+            right_rad_per_sec = -0.5 * (self.w - (self.v/self.radius))
 
             # 4b. Convert rotational velocities to wheel velocities in cm/s.
             robot_rotational_vel_to_wheel_rotational_vel_m_per_sec = 2*self.radius/self.wheel_radius
-            wheel_velocity_right_cm_per_sec = (wheel_rotational_velocity_right_rad_per_sec 
+            right_cm_per_sec = (right_rad_per_sec 
                              * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
                              * CONFIG_M_TO_CM)
-            wheel_velocity_left_cm_per_sec = (wheel_rotational_velocity_left_rad_per_sec 
+            left_cm_per_sec = (left_rad_per_sec 
                              * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
                              * CONFIG_M_TO_CM)
 
             # 4c. max speed of 5 cm/s reduce other angle to allow same ratio
-            max_wheel_velocity = max(abs(wheel_velocity_right_cm_per_sec), abs(wheel_velocity_left_cm_per_sec))
+            max_wheel_velocity = max(abs(right_cm_per_sec), abs(left_cm_per_sec))
             if max_wheel_velocity > 5:
-                wheel_velocity_right_cm_per_sec *= (5/max_wheel_velocity)
-                wheel_velocity_left_cm_per_sec *= (5/max_wheel_velocity)
+                right_cm_per_sec *= (5/max_wheel_velocity)
+                left_cm_per_sec *= (5/max_wheel_velocity)
                 
             # 4d. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
             # TODO: Finish up map, design interpolation for cm to ticks conversion
-            wheel_velocity_right_ticks_per_sec = wheel_velocity_right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
-            wheel_velocity_left_ticks_per_sec  = wheel_velocity_left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+            right_ticks_per_sec = right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+            left_ticks_per_sec  = left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
 
 
             print(wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec)
@@ -462,7 +475,7 @@ class E160_robot:
             # the desired point has been tracked, so don't move
             pass
                 
-        return wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec
+        return right_ticks_per_sec, left_ticks_per_sec
 
 
     def create_path_tracker(self, path):
@@ -497,7 +510,7 @@ class E160_robot:
         yield right_power, left_power
 
 
-    ############ END LAB 3 #################
+     ###### END LAB 3 HELPER FUNCTIONS ######
 
     def normalize_angle(self, theta):
         '''
