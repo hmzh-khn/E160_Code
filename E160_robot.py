@@ -370,28 +370,9 @@ class E160_robot:
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
 
-            # is_forward = self._select_forward_or_backward
+            is_forward = self._toggle_forward_reverse()
 
-            # going forward from start if change in theta in [-pi/2, pi/2]
-            is_forward = 1
-            # if difference between heading and destination angle is greater than pi, set whether or not to go forward
-            heading_dest_angle_difference = abs(self.normalize_angle(math.atan2(Dy, Dx) - self.state_est.theta))
-            if(self.was_forward == 0):
-                # going backward if in [-pi, -pi/2) or (pi/2, pi]
-                if heading_dest_angle_difference > math.pi/2:
-                    is_forward = -1
-            else:
-                if(self.was_forward == 1):
-                    if heading_dest_angle_difference > 3 * math.pi/4:
-                        is_forward = -1
-                else:
-                    if heading_dest_angle_difference < 1 * math.pi/4:
-                        is_forward = 1
-                    else:
-                        is_forward = -1       
-            #print('was: ',self.was_forward, 'is: ', is_forward, 'angle_error: ',abs(math.atan2(Dy, Dx)))
-
-            self.was_forward = is_forward
+            
 
 
             # TODO: Replace with config variable
@@ -466,7 +447,7 @@ class E160_robot:
             left_ticks_per_sec  = left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
 
 
-            print(wheel_velocity_right_ticks_per_sec, wheel_velocity_left_ticks_per_sec)
+            print(right_ticks_per_sec, left_ticks_per_sec)
             # 5. Check if we are close enough to desired destination
             # TODO: add a threshold
             self.point_tracked = False
@@ -476,6 +457,62 @@ class E160_robot:
             pass
                 
         return right_ticks_per_sec, left_ticks_per_sec
+
+
+    def _toggle_forward_reverse(self):
+        """
+        Selects, for point tracking, whether a robot should move forward (1) or
+        in reverse (-1) to get to the destination.
+        """
+        # going forward from start if change in theta in [-pi/2, pi/2]
+        go_forward = 1
+
+        # Get translational differences between current and desired states
+        Dx = self.difference_state.x
+        Dy = self.difference_state.y
+
+        # Identify the heading from the robot to the destination (x_des, y_des)
+        # Note: Only considers translation, ignores current angle, dest angle
+        ideal_heading = self.normalize_angle(math.atan2(Dy, Dx))
+
+        # Get estimated angle of robot w.r.t. global frame
+        robot_heading = self.state_est.theta
+
+        # Identify difference between taking direct path and current robot heading
+        absolute_heading_difference = abs(ideal_heading - robot_heading)
+
+        # Set robot to move forward by default
+        go_forward = 1
+
+        # if robot was previously unmoving, 
+        # then select forward if the heading difference is more than pi/2
+        #      go backward if difference in [-pi, -pi/2) or (pi/2, pi]
+        if(self.was_forward == 0):
+            is_facing_wrong_direction = absolute_heading_difference > CONFIG_QUARTER_TURN
+            go_forward = -1 if is_facing_wrong_direction else 1
+
+        # if robot was previously moving,
+        # then bias its movement in favor of current direction
+        #      i.e. increase the direction switch threshold to more than pi/4 
+        #           away from current heading
+        else:
+            if(self.was_forward == 1):
+                if absolute_heading_difference > CONFIG_QUARTER_TURN + CONFIG_POINT_TRACKING_ANGLE_BIAS:
+                    go_forward = -1
+            else:
+                if absolute_heading_difference >= CONFIG_QUARTER_TURN - CONFIG_POINT_TRACKING_ANGLE_BIAS:
+                    go_forward = -1
+                else:
+                    go_forward = 1       
+        #print('was: ',self.was_forward, 'is: ', go_forward, 'angle_error: ',abs(math.atan2(Dy, Dx)))
+
+        self.was_forward = go_forward
+
+        return go_forward
+
+
+
+
 
 
     def create_path_tracker(self, path):

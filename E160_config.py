@@ -89,6 +89,9 @@ def CONFIG_IN_HARDWARE_MODE(robot_mode):
 def CONFIG_IN_SIMULATION_MODE(robot_mode):
   return robot_mode == SIMULATION_MODE
 
+# decides the threshold away from a quarter turn that the point tracker switches direction
+CONFIG_POINT_TRACKING_ANGLE_BIAS = math.pi/4
+
 
 """
 Tick maps (cm per tick)
@@ -115,6 +118,15 @@ Conversions
 CONFIG_CM_TO_M = 0.01
 CONFIG_M_TO_CM = 100
 CONFIG_DEGS_PER_REVOLUTION = 360 # degrees per revolution (i.e. per 2 pi)
+
+
+"""
+Known Angles
+"""
+CONFIG_QUARTER_TURN = math.pi/2
+CONFIG_HALF_TURN = math.pi
+CONFIG_FULL_TURN = 2*math.pi
+
 
 """ 
 Set all of the regularly altered configurations here.
