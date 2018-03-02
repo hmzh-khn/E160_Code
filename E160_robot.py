@@ -379,36 +379,16 @@ class E160_robot:
             distance_to_point = math.sqrt(Dx**2 + Dy**2)
             ideal_heading_to_point = math.atan2(go_forward * Dy, go_forward * Dx)
 
-            # initialize modifier variables
-            at_point = 0
-            care_about_trajectory = 1
-            beta_local = self.K_beta
+            reached_goal_state, \
+            at_point, \
+            care_about_trajectory, \
+            beta_modifier = self._update_modifiers(acceptable_distance, 
+                                                   acceptable_angle)
 
-            # reached_goal_state, disable_beta, 
-
-            # if reached_goal_state:
-            #     self.point_tracked = True
-            #     self.was_forward = 0
-            #     return (0, 0)
-
-
-            if(distance_to_point < acceptable_distance and abs(Dtheta) < acceptable_angle):
+            if reached_goal_state:
                 self.point_tracked = True
                 self.was_forward = 0
                 return (0, 0)
-
-            if(distance_to_point < 2*acceptable_distance):
-                at_point = 1
-                print('switch to rotate control 2')
-
-            if(distance_to_point < acceptable_distance/2):
-                care_about_trajectory = 0
-                # can switch K_beta to be positive after translation is over
-                beta_local = -self.K_beta
-                print('switch to rotate control 0.5')
-
-
-            
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = distance_to_point
@@ -423,7 +403,7 @@ class E160_robot:
 
             # 3. Identify desired velocities (bound by max velocity)
             self.v = care_about_trajectory * go_forward * self.K_rho * distance_to_point
-            self.w = self.K_alpha * angle_error + beta_local * negated_angle_final
+            self.w = self.K_alpha * angle_error + beta_modifier * self.K_beta * negated_angle_final
 
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then left wheel positively correlated w/ velocity
@@ -500,8 +480,37 @@ class E160_robot:
         self.was_forward = go_forward
         return go_forward
 
+    def _update_modifiers(self, acceptable_distance, acceptable_angle):
+        """
+        Updates control modifiers.
+        """
+        self.difference_state = self.state_est.get_state_difference(self.state_des)
+        Dx = self.difference_state.x
+        Dy = self.difference_state.y
+        Dtheta = self.difference_state.theta
 
+        distance_to_point = math.sqrt(Dx**2 + Dy**2)
 
+        # initialize modifier variables
+        reached_destination = False
+        at_point = 0
+        care_about_trajectory = 1
+        beta_modifier = 1
+
+        if(distance_to_point < acceptable_distance and abs(Dtheta) < acceptable_angle):
+            reached_destination = True
+
+        if(distance_to_point < 2*acceptable_distance):
+            at_point = 1
+            # print('switch to rotate control 2')
+
+        if(distance_to_point < acceptable_distance/2):
+            care_about_trajectory = 0
+            # can switch K_beta to be positive after translation is over
+            beta_modifier = -1
+            # print('switch to rotate control 0.5')
+
+        return reached_destination, at_point, care_about_trajectory, beta_modifier
 
 
 
