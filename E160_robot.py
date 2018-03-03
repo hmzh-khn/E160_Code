@@ -51,15 +51,18 @@ class E160_robot:
 
         # Lab 3
         # point tracking
+        # speedy scales parameters
         if CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
+            # self.speedy = 1.0
             self.K_rho = 0.005#1.0
             self.K_alpha = 0.04#2.0
             self.K_beta =  -0.01#-0.5
 
         if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
-            self.K_rho = 1.0
-            self.K_alpha = 5.0
-            self.K_beta =  -1.0
+            # self.speedy = 0.1
+            self.K_rho = 1.0 #* self.speedy
+            self.K_alpha = 1.8 #* self.speedy
+            self.K_beta =  -1.0 #* self.speedy
 
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
@@ -397,6 +400,12 @@ class E160_robot:
             negated_angle_final = ((1-at_point) * angle_error 
                                    - self.state_est.theta
                                    + self.state_des.theta)
+
+            # currently unused, may use in future
+            alpha_modifier = 1
+            # if abs(angle_error) < math.pi/8:
+            #     alpha_modifier = 0.1
+
             # RENAME THIS VARIABLE
             if at_point == 1:
                 negated_angle_final = self.short_angle(negated_angle_final)
@@ -404,7 +413,8 @@ class E160_robot:
 
             # 3. Identify desired velocities (bound by max velocity)
             self.v = care_about_trajectory * go_forward * self.K_rho * distance_to_point
-            self.w = self.K_alpha * angle_error + beta_modifier * self.K_beta * negated_angle_final
+            self.w = (alpha_modifier * self.K_alpha * angle_error 
+                     + beta_modifier * self.K_beta  * negated_angle_final)
 
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then left wheel positively correlated w/ velocity
@@ -497,7 +507,7 @@ class E160_robot:
         reached_destination = False
         at_point = 0
         care_about_trajectory = 1
-        beta_modifier = 1
+        beta_modifier = 0.1
 
         if(distance_to_point < acceptable_distance and abs(Dtheta) < acceptable_angle):
             reached_destination = True
@@ -509,7 +519,7 @@ class E160_robot:
         if(distance_to_point < acceptable_distance/2):
             care_about_trajectory = 0
             # can switch K_beta to be positive after translation is over
-            beta_modifier = -0.1
+            beta_modifier *= -1.0 #/self.speedy
             print('switch to rotate control 0.5')
 
         return reached_destination, at_point, care_about_trajectory, beta_modifier
