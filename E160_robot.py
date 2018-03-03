@@ -360,6 +360,9 @@ class E160_robot:
         right_ticks_per_sec = 0
         left_ticks_per_sec  = 0
 
+        # set acceptable thresholds for point tracking
+        acceptable_distance = CONFIG_DISTANCE_THRESHOLD_M 
+        acceptable_angle = CONFIG_ANGLE_THRESHOLD_RAD
 
         # If the desired point is not tracked yet, then track it
         if not self.point_tracked:
@@ -370,56 +373,37 @@ class E160_robot:
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
 
-            is_forward = self._toggle_forward_reverse()
+            # decide whether or not to use forward/reverse controller
+            go_forward = self._toggle_forward_reverse()
 
-            
+            distance_to_point = math.sqrt(Dx**2 + Dy**2)
+            ideal_heading_to_point = math.atan2(go_forward * Dy, go_forward * Dx)
 
+            reached_goal_state, \
+            at_point, \
+            care_about_trajectory, \
+            beta_modifier = self._update_modifiers(acceptable_distance, 
+                                                   acceptable_angle)
 
-            # TODO: Replace with config variable
-            at_point = 0
-            care_about_trajectory = 1
-
-            acceptable_distance = CONFIG_DISTANCE_THRESHOLD_X_M 
-            acceptable_angle = CONFIG_ANGLE_THRESHOLD_RAD
-            distance = math.sqrt(Dx**2 + Dy**2)
-            beta_local = self.K_beta
-
-            if(distance < acceptable_distance and abs(Dtheta) < acceptable_angle):
+            if reached_goal_state:
                 self.point_tracked = True
                 self.was_forward = 0
                 return (0, 0)
 
-            if(distance < acceptable_distance):
-                # care_about_trajectory = max((distance - acceptable_distance/2) / (acceptable_distance/2), 0)
-                print('switch to reduced distance')
-
-            if(distance < 2*acceptable_distance):
-                at_point = 1
-                print('switch to rotate control 2')
-
-            if(distance < acceptable_distance/2):
-                care_about_trajectory = 0
-                # can switch K_beta to be positive after translation is over
-                beta_local = -self.K_beta
-                print('switch to rotate control 0.5')
-
             # 2. Calculate position of \rho, \alpha, \beta, respectively
-            distance_to_point = math.sqrt(Dx**2 + Dy**2)
-            angle_error = (-self.state_est.theta + math.atan2(is_forward * Dy, 
-                                                             is_forward * Dx)) * care_about_trajectory
-            negated_angle_final = -self.state_est.theta + angle_error * at_point + self.state_des.theta
+            distance_to_point = distance_to_point
+            angle_error = care_about_trajectory * (-self.state_est.theta
+                                                   + ideal_heading_to_point)
+            negated_angle_final = (at_point * angle_error 
+                                   - self.state_est.theta 
+                                   + self.state_des.theta)
             # RENAME THIS VARIABLE
             if at_point == 1:
                 negated_angle_final = self.short_angle(negated_angle_final)
 
-            print(negated_angle_final)
             # 3. Identify desired velocities (bound by max velocity)
-            # TODO: THINK ABOUT HOW TO DEAL WITH LIMIT CYCLE
-            self.v = care_about_trajectory * is_forward * self.K_rho * distance_to_point
-            self.w = self.K_alpha * angle_error + beta_local * negated_angle_final
-            #print('Bearing: ',self.state_est.theta,' From Final: ',Dtheta, "NAF: ", negated_angle_final)
-            #print(angle_error)
-            #print('w: ',self.w,'v: ',self.v)
+            self.v = care_about_trajectory * go_forward * self.K_rho * distance_to_point
+            self.w = self.K_alpha * angle_error + beta_modifier * self.K_beta * negated_angle_final
 
             # 4a. Determine desired wheel rotational velocities using desired robot velocities
             # Assuming CW is positive, then left wheel positively correlated w/ velocity
@@ -427,13 +411,13 @@ class E160_robot:
             right_rad_per_sec = -0.5 * (self.w - (self.v/self.radius))
 
             # 4b. Convert rotational velocities to wheel velocities in cm/s.
-            robot_rotational_vel_to_wheel_rotational_vel_m_per_sec = 2*self.radius/self.wheel_radius
+            wheel_rotational_vel_to_m_per_sec = 2*self.radius/self.wheel_radius
             right_cm_per_sec = (right_rad_per_sec 
-                             * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
-                             * CONFIG_M_TO_CM)
+                                * wheel_rotational_vel_to_m_per_sec
+                                * CONFIG_M_TO_CM)
             left_cm_per_sec = (left_rad_per_sec 
-                             * robot_rotational_vel_to_wheel_rotational_vel_m_per_sec
-                             * CONFIG_M_TO_CM)
+                                * wheel_rotational_vel_to_m_per_sec
+                                * CONFIG_M_TO_CM)
 
             # 4c. max speed of 5 cm/s reduce other angle to allow same ratio
             max_wheel_velocity = max(abs(right_cm_per_sec), abs(left_cm_per_sec))
@@ -443,8 +427,10 @@ class E160_robot:
                 
             # 4d. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
             # TODO: Finish up map, design interpolation for cm to ticks conversion
-            right_ticks_per_sec = right_cm_per_sec / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
-            left_ticks_per_sec  = left_cm_per_sec / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+            right_ticks_per_sec = (right_cm_per_sec 
+                                   / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
+            left_ticks_per_sec  = (left_cm_per_sec 
+                                   / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
 
 
             print(right_ticks_per_sec, left_ticks_per_sec)
@@ -481,37 +467,50 @@ class E160_robot:
         # Identify difference between taking direct path and current robot heading
         absolute_heading_difference = abs(ideal_heading - robot_heading)
 
-        # Set robot to move forward by default
-        go_forward = 1
-
         # if robot was previously unmoving, 
-        # then select forward if the heading difference is more than pi/2
-        #      go backward if difference in [-pi, -pi/2) or (pi/2, pi]
-        if(self.was_forward == 0):
-            is_facing_wrong_direction = absolute_heading_difference > CONFIG_QUARTER_TURN
-            go_forward = -1 if is_facing_wrong_direction else 1
+        # then select forward if the heading difference is in [-pi/2, pi/2]
+        #      i.e. go backward if difference in [-pi, -pi/2) or (pi/2, pi]
+        # otherwise robot was previously moving,
+        # then select same direction if the heading difference 
+        #      is in [-pi/2-bias_for_same_dir, pi/2+bias_for_same_dir]
 
-        # if robot was previously moving,
-        # then bias its movement in favor of current direction
-        #      i.e. increase the direction switch threshold to more than pi/4 
-        #           away from current heading
-        else:
-            if(self.was_forward == 1):
-                if absolute_heading_difference > CONFIG_QUARTER_TURN + CONFIG_POINT_TRACKING_ANGLE_BIAS:
-                    go_forward = -1
-            else:
-                if absolute_heading_difference >= CONFIG_QUARTER_TURN - CONFIG_POINT_TRACKING_ANGLE_BIAS:
-                    go_forward = -1
-                else:
-                    go_forward = 1       
-        #print('was: ',self.was_forward, 'is: ', go_forward, 'angle_error: ',abs(math.atan2(Dy, Dx)))
+        is_facing_wrong_direction = absolute_heading_difference > CONFIG_QUARTER_TURN + self.was_forward * CONFIG_POINT_TRACKING_ANGLE_BIAS
+        go_forward = -1 if is_facing_wrong_direction else 1
 
         self.was_forward = go_forward
-
         return go_forward
 
+    def _update_modifiers(self, acceptable_distance, acceptable_angle):
+        """
+        Updates control modifiers.
+        """
+        self.difference_state = self.state_est.get_state_difference(self.state_des)
+        Dx = self.difference_state.x
+        Dy = self.difference_state.y
+        Dtheta = self.difference_state.theta
 
+        distance_to_point = math.sqrt(Dx**2 + Dy**2)
 
+        # initialize modifier variables
+        reached_destination = False
+        at_point = 0
+        care_about_trajectory = 1
+        beta_modifier = 1
+
+        if(distance_to_point < acceptable_distance and abs(Dtheta) < acceptable_angle):
+            reached_destination = True
+
+        if(distance_to_point < 2*acceptable_distance):
+            at_point = 1
+            # print('switch to rotate control 2')
+
+        if(distance_to_point < acceptable_distance/2):
+            care_about_trajectory = 0
+            # can switch K_beta to be positive after translation is over
+            beta_modifier = -1
+            # print('switch to rotate control 0.5')
+
+        return reached_destination, at_point, care_about_trajectory, beta_modifier
 
 
 

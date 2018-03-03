@@ -21,7 +21,7 @@ class E160_state:
     def get_state_difference(self, destination_state):
         delta_x = self.x - destination_state.x
         delta_y = self.y - destination_state.y
-        delta_theta = self.normalize_angle(destination_state.theta - self.theta)
+        delta_theta = self.normalize_angle(self.theta - destination_state.theta)
         delta_theta = self.short_angle(delta_theta)
         return E160_state(delta_x, delta_y, delta_theta)
 
