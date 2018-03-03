@@ -67,10 +67,11 @@ MAIN_TESTS = (
 
 
 # DESIRED_COORDS = MAIN_TESTS
-CLARK_TESTS = [(0.25,0.25,0), RESET_STATE, (0,0.25,0), RESET_STATE, (0,0,2.7), (0,0,-2.7), (0,0,2.7), RESET_STATE, (-0.25,0,3.14), (0,0,3.14)]
-DESIRED_COORDS = CLARK_TESTS
+CLARK_TESTS = [(0.25,0.25,0), RESET_STATE, (0,0.25,0), RESET_STATE, (0,0,2.7), (0,0,-2.7), (0,0,2.7), RESET_STATE, (-0.25,0,math.pi), (0,0,math.pi)]
+TUNING_TESTS = [(0,1.0,0),RESET_STATE]
+DESIRED_COORDS = TUNING_TESTS
 
-PATH = [E160_state(x=point) for point in DESIRED_COORDS[-2:] ]
+PATH = [E160_state(x=point) for point in DESIRED_COORDS ]
 
 def runRobot(env, graphics=None, deltaT=CONFIG_DELTA_T):
   if graphics:

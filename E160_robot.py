@@ -57,9 +57,9 @@ class E160_robot:
             self.K_beta =  -0.01#-0.5
 
         if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
-            self.K_rho = 0.5#1.0
-            self.K_alpha = 0.8#2.0
-            self.K_beta =  -0.05#-0.5
+            self.K_rho = 1.0
+            self.K_alpha = 5.0
+            self.K_beta =  -1.0
 
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
@@ -384,7 +384,7 @@ class E160_robot:
             care_about_trajectory, \
             beta_modifier = self._update_modifiers(acceptable_distance, 
                                                    acceptable_angle)
-            print("Modifiers: ",reached_goal_state, at_point,care_about_trajectory,beta_modifier)
+            # print("Modifiers: ",reached_goal_state, at_point,care_about_trajectory,beta_modifier)
             if reached_goal_state:
                 self.point_tracked = True
                 self.was_forward = 0
@@ -392,11 +392,11 @@ class E160_robot:
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = distance_to_point
-            angle_error = care_about_trajectory * (-self.state_est.theta
-                                                   + ideal_heading_to_point)
-            negated_angle_final = (at_point * angle_error +
-                                   self.normalize_angle(- self.state_est.theta 
-                                   + self.state_des.theta))
+            angle_error = self.short_angle(care_about_trajectory * (-self.state_est.theta
+                                                   + ideal_heading_to_point))
+            negated_angle_final = ((1-at_point) * angle_error 
+                                   - self.state_est.theta
+                                   + self.state_des.theta)
             # RENAME THIS VARIABLE
             if at_point == 1:
                 negated_angle_final = self.short_angle(negated_angle_final)
@@ -451,65 +451,36 @@ class E160_robot:
         Selects, for point tracking, whether a robot should move forward (1) or
         in reverse (-1) to get to the destination.
         """
+        # going forward from start if change in theta in [-pi/2, pi/2]
+        go_forward = 1
 
         # Get translational differences between current and desired states
         Dx = self.difference_state.x
         Dy = self.difference_state.y
-        is_forward = 1
-        # if difference between heading and destination angle is greater than pi, set whether or not to go forward
-        heading_dest_angle_difference = abs(self.normalize_angle(math.atan2(Dy, Dx) - self.state_est.theta))
-        if(self.was_forward == 0):
-            print("Was forward = 0", heading_dest_angle_difference, math.atan2(Dy,Dx), self.state_est.theta)
-            # going backward if in [-pi, -pi/2) or (pi/2, pi]
-            if heading_dest_angle_difference > math.pi/2:
-                is_forward = -1
-                print("probably oughta go backward")
-        else:
-            if(self.was_forward == 1):
-                if heading_dest_angle_difference > 3 * math.pi/4:
-                    is_forward = -1
-                    print("reversed from forwards")
-                    print("f", heading_dest_angle_difference, math.atan2(Dy,Dx), self.state_est.theta)
-            else:
-                if heading_dest_angle_difference < 1 * math.pi/4:
-                    is_forward = 1
-                    print("reversed From backwards")
-                    print("b ", heading_dest_angle_difference, math.atan2(Dy,Dx), self.state_est.theta)
-                else:
-                    is_forward = -1  
-        self.was_forward = is_forward
-        print(is_forward)
-        return is_forward
-        # # going forward from start if change in theta in [-pi/2, pi/2]
-        # go_forward = 1
 
-        # # Get translational differences between current and desired states
-        # Dx = self.difference_state.x
-        # Dy = self.difference_state.y
+        # Identify the heading from the robot to the destination (x_des, y_des)
+        # Note: Only considers translation, ignores current angle, dest angle
+        ideal_heading = self.normalize_angle(math.atan2(Dy, Dx))
 
-        # # Identify the heading from the robot to the destination (x_des, y_des)
-        # # Note: Only considers translation, ignores current angle, dest angle
-        # ideal_heading = self.normalize_angle(math.atan2(Dy, Dx))
+        # Get estimated angle of robot w.r.t. global frame
+        robot_heading = self.state_est.theta
 
-        # # Get estimated angle of robot w.r.t. global frame
-        # robot_heading = self.state_est.theta
+        # Identify difference between taking direct path and current robot heading
+        absolute_heading_difference = abs(self.normalize_angle(ideal_heading - robot_heading))
 
-        # # Identify difference between taking direct path and current robot heading
-        # absolute_heading_difference = abs(self.normalize_angle(ideal_heading - robot_heading))
+        # if robot was previously unmoving, 
+        # then select forward if the heading difference is in [-pi/2, pi/2]
+        #      i.e. go backward if difference in [-pi, -pi/2) or (pi/2, pi]
+        # otherwise robot was previously moving,
+        # then select same direction if the heading difference 
+        #      is in [-pi/2-bias_for_same_dir, pi/2+bias_for_same_dir]
 
-        # # if robot was previously unmoving, 
-        # # then select forward if the heading difference is in [-pi/2, pi/2]
-        # #      i.e. go backward if difference in [-pi, -pi/2) or (pi/2, pi]
-        # # otherwise robot was previously moving,
-        # # then select same direction if the heading difference 
-        # #      is in [-pi/2-bias_for_same_dir, pi/2+bias_for_same_dir]
+        threshold = CONFIG_QUARTER_TURN + self.was_forward * CONFIG_POINT_TRACKING_ANGLE_BIAS
+        is_facing_wrong_direction = absolute_heading_difference > threshold
+        go_forward = -1 if is_facing_wrong_direction else 1
 
-        # threshold = CONFIG_QUARTER_TURN + self.was_forward * CONFIG_POINT_TRACKING_ANGLE_BIAS
-        # is_facing_wrong_direction = absolute_heading_difference > threshold
-        # go_forward = -1 if is_facing_wrong_direction else 1
-
-        # self.was_forward = go_forward
-        # return go_forward
+        self.was_forward = go_forward
+        return go_forward
 
     def _update_modifiers(self, acceptable_distance, acceptable_angle):
         """
@@ -533,13 +504,13 @@ class E160_robot:
 
         if(distance_to_point < 2*acceptable_distance):
             at_point = 1
-            # print('switch to rotate control 2')
+            print('switch to rotate control 2')
 
         if(distance_to_point < acceptable_distance/2):
             care_about_trajectory = 0
             # can switch K_beta to be positive after translation is over
-            beta_modifier = -1
-            # print('switch to rotate control 0.5')
+            beta_modifier = -0.1
+            print('switch to rotate control 0.5')
 
         return reached_destination, at_point, care_about_trajectory, beta_modifier
 
