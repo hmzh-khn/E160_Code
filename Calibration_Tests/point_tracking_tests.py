@@ -97,6 +97,7 @@ if __name__ == "__main__":
   robot = env.robots[0]
   robot.path = PATH
   robot.path_tracking_pause_duration = 1 # sec
+  robot.filename = "Log/pointTracking" + '_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
   # path_tracking = robot.create_path_tracker(PATH)
 
   # robot.point_tracked = False
