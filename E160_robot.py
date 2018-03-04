@@ -524,7 +524,7 @@ class E160_robot:
 
         return reached_destination, at_point, care_about_trajectory, beta_modifier
 
-
+    ###### END LAB 3 HELPER FUNCTIONS ######
 
     def create_path_tracker(self, path):
         """
