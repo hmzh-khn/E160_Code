@@ -10,16 +10,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import linregress
+import math
 
 PATH_HEAD = "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/LabData/"
+
+def normalize_angle(theta):
+  '''
+  Returns an angle in range (-pi, pi]
+  '''
+  out_angle = theta % (2 * math.pi)
+  greater_than_pi = (out_angle > math.pi).astype(int)
+  return out_angle - 2 * math.pi * greater_than_pi
 
 
 RIGHT_DOT_FILEPATH  = PATH_HEAD+"red_dot.csv"
 LEFT_DOT_FILEPATH   = PATH_HEAD+"blue_dot.csv"
 # desired_tick_rate_L desired_tick_rate_R state_est_x state_est_y state_est_theta deltaleftEnc deltarightEnc
 ODOMETRY_FILEPATH   = PATH_HEAD+"pointTrackingHARD_FINAL_18-03-03 10.40.38_LargeThreshold_1_1.8_neg1.csv"
-# Add later
-# SIMULATION_FILEPATH = ""
+SIMULATION_FILEPATH = PATH_HEAD+"pointTrackingSOFT_FINAL_18-03-04 13.58.29_LargeThreshold_0.005_0.04_neg0.1.csv"
 
 CONVERT_M_TO_CM = 100
 
@@ -75,7 +83,6 @@ for pt in tile_corners:
   y -= C0y
   ref_points[pt][0] = x
   ref_points[pt][1] = y
-# print(tile_corners)
 
 # find rotation of point
 rows = [[NW, N, NE], [W, C, E], [SW, S, SE]]
@@ -111,8 +118,6 @@ dists_between_pts = []
 for vec in rows+cols:
   for i in range(len(vec)-1):
     dist = np.linalg.norm(ref_points[vec[i+1]] - ref_points[vec[i]])
-    print(vec[i+1], vec[i], dist)
-    # print(dist)
     dists_between_pts.append(dist)
 
 # conversion from point to centimeters
@@ -127,27 +132,169 @@ print('conversion from px to cm is ', CONVERT_PX_TO_CM, 'px/cm')
 right_dot = pd.read_csv(RIGHT_DOT_FILEPATH)
 left_dot  = pd.read_csv(LEFT_DOT_FILEPATH)
 odometry  = pd.read_csv(ODOMETRY_FILEPATH)
+softsim   = pd.read_csv(SIMULATION_FILEPATH)
+
+# flip reversed axes in odometry, software simulation
+odometry['state_est_x'] = CONVERT_M_TO_CM * odometry['state_est_x']
+odometry['state_est_y'] = CONVERT_M_TO_CM * odometry['state_est_y']
+odometry['state_est_theta'] = odometry['state_est_theta']
+
+softsim['state_est_x'] = CONVERT_M_TO_CM * softsim['state_est_x']
+softsim['state_est_y'] = CONVERT_M_TO_CM * softsim['state_est_y']
+softsim['state_est_theta'] = softsim['state_est_theta']
 
 # get position in pixels and recenter w.r.t root
 video_pos_px = (right_dot[['x','y']] + left_dot[['x','y']])/2
+video_pos_px['y'] = -video_pos_px['y']
 video_pos_px -= video_pos_px.ix[0,:]
 video_pos_cm = CONVERT_PX_TO_CM * video_pos_px
 
 Dy = right_dot['y'] - left_dot['y']
 Dx = right_dot['x'] - left_dot['x']
-video_heading = np.arctan2(Dy, Dx)
+video_heading = -np.arctan2(Dy, Dx)
+video_heading -= video_heading[0]
+video_heading = normalize_angle(video_heading)
 
-print(video_pos_cm)
+video_state = pd.concat([video_pos_cm, video_heading], axis=1)
 
-plt.subplot(3,1,1)
+# plt.figure()
+# plt.plot(softsim['state_est_x'][0:118])
+# plt.figure()
+# plt.plot(softsim['state_est_y'][0:118])
+# plt.figure()
+# plt.plot(softsim['state_est_theta'][0:118])
 
-plt.plot(CONVERT_M_TO_CM * odometry['state_est_x'], -CONVERT_M_TO_CM * odometry['state_est_y'])
-plt.plot(video_pos_cm['x'], video_pos_cm['y'])
-plt.legend()
-plt.subplot(3,1,2)
-plt.plot(video_heading)
-plt.subplot(3,1,3)
-plt.plot(-odometry['state_est_theta'])
-plt.legend()
+# plotting
+stage1end = 929
+stage2end = 1780
+stage3end = 2156 # (2340)
+stage4end = 2812
+# print(video_pos_cm[0:stage1end], video_heading[0:stage1end])
+
+# plt.figure()
+# plt.title('full path - robot state (x, y) while tracking path')
+# plt.xlim(-30,30)
+# plt.ylim(-30,30)
+# plt.plot(video_pos_cm['x'], video_pos_cm['y'], label='video odometry')
+# plt.plot(odometry['state_est_x'], odometry['state_est_y'], label='hardware-in-the-loop simulation')
+# # plt.plot(softsim['state_est_x'][0:118], softsim['state_est_y'][0:118], label='software simulation')
+# plt.xlabel('x pos (cm)')
+# plt.ylabel('y pos (cm)')
+# plt.legend()
+
+# plt.figure()
+# plt.title('full path software simulation - robot state (x, y) while tracking path')
+# plt.xlim(-30,30)
+# plt.ylim(-30,30)
+# plt.plot(softsim['state_est_x'], softsim['state_est_y'], label='software simulation')
+# plt.xlabel('x pos (cm)')
+# plt.ylabel('y pos (cm)')
+# plt.legend()
+
+
+# plt.figure()
+# plt.suptitle('robot state (x, y, theta) while tracking path \n (0,0,0) -> (0.25,0.25) -> (0,0,0)')
+# plt.subplot(4,1,1)
+# plt.xlim(-30,30)
+# plt.ylim(-30,30)
+# plt.plot(video_pos_cm[0:stage1end]['x'], video_pos_cm[0:stage1end]['y'], label='video odometry')
+# plt.plot(odometry['state_est_x'][0:159],odometry['state_est_y'][0:159], label='hardware-in-the-loop simulation')
+# plt.plot(softsim['state_est_x'][0:118], softsim['state_est_y'][0:118], label='software simulation')
+# plt.ylabel('y pos (cm)')
+# plt.legend()
+# plt.subplot(4,1,2)
+# plt.ylim(-math.pi,math.pi)
+# plt.plot(video_heading[0:stage1end], label='video odometry')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,3)
+# plt.ylim(-math.pi,math.pi)
+# plt.plot(odometry['state_est_theta'][0:159], label='hardware-in-the-loop simulation')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,4)
+# plt.ylim(-math.pi,math.pi)
+# plt.plot(softsim['state_est_theta'][0:118], label='software simulation')
+# plt.ylabel('heading (rad)')
+# plt.xlabel('1. x pos (cm), 2. frame number, 3. host computer sensor reading number \n 4. host comp. reading number')
+# plt.legend()
+
+# plt.figure()
+# plt.suptitle('robot state (x, y, theta) while tracking path \n (0,0,0) -> (0,0.25,0) -> (0,0,0)')
+# plt.subplot(4,1,1)
+# plt.xlim(-30,30)
+# plt.ylim(-30,30)
+# plt.plot(video_pos_cm[stage1end:stage2end]['x'], video_pos_cm[stage1end:stage2end]['y'], label='video odometry')
+# plt.plot(odometry['state_est_x'][159:309],odometry['state_est_y'][159:309], label='hardware-in-the-loop simulation')
+# plt.plot(softsim['state_est_x'][118:250], softsim['state_est_y'][118:250], label='software simulation')
+# plt.ylabel('y pos (cm)')
+# plt.legend()
+# plt.subplot(4,1,2)
+# plt.plot(video_heading[stage1end:stage2end], label='video odometry')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,3)
+# plt.plot(odometry['state_est_theta'][159:309], label='hardware-in-the-loop simulation')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,4)
+# plt.ylim(-math.pi,math.pi)
+# plt.plot(softsim['state_est_theta'][118:250], label='software simulation')
+# plt.ylabel('heading (rad)')
+# plt.xlabel('1. x pos (cm), 2. frame number, 3. host computer sensor reading number \n 4. host comp. reading number')
+# plt.legend()
+
+# plt.figure()
+# plt.suptitle('robot state (x, y, theta) while tracking path \n (0,0,0) -> (0,0,2.7) -> (0,0,-2.7) -> (0,0,2.7) -> (0,0,0)')
+# plt.subplot(4,1,1)
+# plt.xlim(-30,30)
+# plt.ylim(-30,30)
+# plt.plot(video_pos_cm[stage2end:stage3end]['x'], video_pos_cm[stage2end:stage3end]['y'], label='video odometry')
+# plt.plot(odometry['state_est_x'][309:374],odometry['state_est_y'][309:374], label='hardware-in-the-loop simulation')
+# plt.plot(softsim['state_est_x'][250:344], softsim['state_est_y'][250:344], label='software simulation')
+# plt.ylabel('y pos (cm)')
+# plt.legend()
+# plt.subplot(4,1,2)
+# plt.plot(video_heading[stage2end:stage3end], label='video odometry')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,3)
+# plt.plot(odometry['state_est_theta'][309:374], label='hardware-in-the-loop simulation')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,4)
+# plt.ylim(-math.pi,math.pi)
+# plt.plot(softsim['state_est_theta'][250:344], label='software simulation')
+# plt.ylabel('heading (rad)')
+# plt.xlabel('1. x pos (cm), 2. frame number, 3. host computer sensor reading number \n 4. host comp. reading number')
+# plt.legend()
+
+# fig = plt.figure()
+# plt.suptitle('robot state (x, y, theta) while tracking path \n (0,0,0) -> (0.25,0,pi) -> (0,0,pi)')
+# plt.subplot(4,1,1)
+# plt.xlim(-30,30)
+# plt.ylim(-30,30)
+# plt.plot(video_pos_cm[stage3end:stage4end]['x'], video_pos_cm[stage3end:stage4end]['y'], label='video odometry')
+# plt.plot(odometry['state_est_x'][374:500],odometry['state_est_y'][374:500], label='hardware-in-the-loop simulation')
+# plt.plot(softsim['state_est_x'][344:460], softsim['state_est_y'][344:460], label='software simulation')
+# plt.ylabel('y pos (cm)')
+# plt.legend()
+# plt.subplot(4,1,2)
+# plt.plot(video_heading[stage3end:stage4end], label='video odometry')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,3)
+# plt.plot(odometry['state_est_theta'][374:500], label='hardware-in-the-loop simulation')
+# plt.ylabel('heading (rad)')
+# plt.legend()
+# plt.subplot(4,1,4)
+# plt.ylim(-math.pi,math.pi)
+# plt.plot(softsim['state_est_theta'][344:560], label='software simulation')
+# plt.ylabel('heading (rad)')
+# plt.xlabel('1. x pos (cm), 2. frame number, 3. host computer sensor reading number \n 4. host comp. reading number')
+# plt.legend()
+
+
+
 plt.show()
 

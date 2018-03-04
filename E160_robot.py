@@ -56,7 +56,7 @@ class E160_robot:
             # self.speedy = 1.0
             self.K_rho = 0.005#1.0
             self.K_alpha = 0.04#2.0
-            self.K_beta =  -0.01#-0.5
+            self.K_beta =  -0.1#-0.5
 
         if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
             # self.speedy = 0.1
