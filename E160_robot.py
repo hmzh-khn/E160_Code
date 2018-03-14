@@ -1,6 +1,7 @@
 
 from E160_config import *
 from E160_state import *
+from E160_PF import *
 import math
 import datetime
 import time
@@ -17,6 +18,10 @@ class E160_robot:
         self.state_est.set_state(0,0,0)
         self.state_des = E160_state()
         self.state_des.set_state(0,0,0)
+        self.state_draw = E160_state()
+        self.state_draw.set_state(0,0,0) 
+        self.state_odo = E160_state()
+        self.state_odo.set_state(0,0,0)
 
         self.R = 0
         self.L = 0
@@ -45,7 +50,7 @@ class E160_robot:
         self.is_first_run = True
 
         # stores changes in deltaS, deltaTheta between iterations
-        self.delta_state = (0, 0)
+        self.delta_state_odo = (0, 0)
         self.testing_power_L = 0
         self.testing_power_R = 0
 
@@ -84,6 +89,13 @@ class E160_robot:
         self.w = 0.0
         self.was_forward = 0
 
+        # Lab 4 Particle Filter
+        # UPDATE THIS FOR ENCODER RESOLUTION
+        self.PF = E160_PF(environment, 
+                          self.width, 
+                          self.wheel_radius, 
+                          2 * math.pi * self.wheel_radius * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
+
     def change_headers(self):
         self.make_headers()
 
@@ -93,9 +105,19 @@ class E160_robot:
         # get sensor measurements
         self.encoder_measurements, self.range_measurements = self.update_sensor_measurements(deltaT)
 
+        # update odometry
+        delta_s, delta_theta = self.update_odometry(self.encoder_measurements)
+        self.delta_state_odo = (delta_s, delta_theta)
+
         # localize
-        self.state_est = self.localize(self.state_est, self.encoder_measurements, self.range_measurements)
+        self.state_odo = self.localize(self.state_odo, self.encoder_measurements, self.range_measurements)
         
+        # localize with particle filter
+        self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.range_measurements)
+
+        # to out put the true location for display purposes only. 
+        self.state_draw = self.state_odo
+
         # call motion planner
         #self.motion_planner.update_plan()
         
@@ -123,14 +145,16 @@ class E160_robot:
         # obtain sensor measurements
         elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
-            range_measurements = [0,0,0]
+            sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0])
+            sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1])
+            sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2])
+            range_measurements = [sensor1, sensor2, sensor3]
         
         return encoder_measurements, range_measurements
         
         
     def localize(self, state_est, encoder_measurements, range_measurements):
-        delta_s, delta_theta = self.update_odometry(encoder_measurements)
-        self.delta_state = (delta_s, delta_theta)
+        delta_s, delta_theta = self.delta_state_odo
         state_est = self.update_state(state_est, delta_s, delta_theta)
     
         return state_est
@@ -211,6 +235,11 @@ class E160_robot:
         
         return [left_encoder_measurement, right_encoder_measurement]
     
+    def simulate_range_finder(self, state, sensorT):
+        '''Simulate range readings, given a simulated ground truth state'''
+        p = self.PF.Particle(state.x, state.y, state.theta, 0)
+
+        return self.PF.FindMinWallDistance(p, self.environment.walls, sensorT)
 
     # clean up this function
     def update_odometry(self, encoder_measurements):
@@ -291,7 +320,7 @@ class E160_robot:
 
         # log distance from wall to 2 decimal places
         # alpha = round(self.R_motor_scaling_factor, 4)
-        data = [str(self.L), str(self.R), str(self.state_est), str(self.delta_left), str(self.delta_right)]
+        data = [str(self.L), str(self.R), str(self.state_odo), str(self.delta_left), str(self.delta_right)]
         
         f.write(' '.join(data) + '\n')
         f.close()
@@ -309,7 +338,7 @@ class E160_robot:
             forward_distance = range_measurements[0]
             distance_cm = CONFIG_FORWARD_DISTANCE_CALIBRATION(forward_distance)
             # For lab 1, update y-state to be distance from wall
-            self.state_est.set_state(0, distance_cm, 0)
+            self.state_odo.set_state(0, distance_cm, 0)
         else:
             # if voltage is 0, don't move
             distance_cm = CONFIG_ERROR_DISTANCE_CM
@@ -371,7 +400,7 @@ class E160_robot:
         if not self.point_tracked:
 
             # 1. Calculate changes in x, y.
-            self.difference_state = self.state_est.get_state_difference(self.state_des)
+            self.difference_state = self.state_odo.get_state_difference(self.state_des)
             Dx = self.difference_state.x
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
@@ -395,10 +424,10 @@ class E160_robot:
 
             # 2. Calculate position of \rho, \alpha, \beta, respectively
             distance_to_point = distance_to_point
-            angle_error = self.short_angle(care_about_trajectory * (-self.state_est.theta
+            angle_error = self.short_angle(care_about_trajectory * (-self.state_odo.theta
                                                    + ideal_heading_to_point))
             negated_angle_final = ((1-at_point) * angle_error 
-                                   - self.state_est.theta
+                                   - self.state_odo.theta
                                    + self.state_des.theta)
 
             # currently unused, may use in future
@@ -473,7 +502,7 @@ class E160_robot:
         ideal_heading = self.normalize_angle(math.atan2(Dy, Dx))
 
         # Get estimated angle of robot w.r.t. global frame
-        robot_heading = self.state_est.theta
+        robot_heading = self.state_odo.theta
 
         # Identify difference between taking direct path and current robot heading
         absolute_heading_difference = abs(self.normalize_angle(ideal_heading - robot_heading))
@@ -496,7 +525,7 @@ class E160_robot:
         """
         Updates control modifiers.
         """
-        self.difference_state = self.state_est.get_state_difference(self.state_des)
+        self.difference_state = self.state_odo.get_state_difference(self.state_des)
         Dx = self.difference_state.x
         Dy = self.difference_state.y
         Dtheta = self.difference_state.theta

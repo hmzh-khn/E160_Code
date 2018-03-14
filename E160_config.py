@@ -131,7 +131,7 @@ CONFIG_FULL_TURN = 2*math.pi
 Set all of the regularly altered configurations here.
 """
 
-CONFIG_LAB_NUMBER = 3
+CONFIG_LAB_NUMBER = 4
 
 ##### SET DESIRED STOP DISTANCE MODE HERE (for Lab 1) #####
 CONFIG_OFFSET_CM = 0.5*2.54

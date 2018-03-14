@@ -144,7 +144,10 @@ class E160_graphics:
         self.typing_k_alpha.insert(0,self.robot.K_alpha) 
         self.typing_k_beta.insert(0,self.robot.K_beta)  
 
-                # draw static environment
+        # initilize particle representation
+        self.particles_dot = [self.canvas.create_oval(0,0,0,0, fill ='black') for x in range(self.environment.robots[0].PF.numParticles)]
+
+        # draw static environment
         for w in self.environment.walls:
             self.draw_wall(w)
             
@@ -320,9 +323,10 @@ class E160_graphics:
             self.draw_robot(r)     
         
         # draw particles
-        
+        self.draw_particles(self.environment.robots[0])
         
         # draw sensors
+
         
         # check for text input
         self.prev_typing_int = self.typing_int
@@ -362,14 +366,11 @@ class E160_graphics:
             return False
         else:
             return True
+
+    def draw_particles(self, robot):
+        for i in range(robot.PF.numParticles):
+            pf_point = [robot.PF.particles[i].x, robot.PF.particles[i].y]
+            point = self.scale_points(pf_point, self.scale)
+            self.canvas.delete(self.particles_dot[i]) 
+            self.particles_dot[i] = self.canvas.create_oval(point[0] - 2, point[1] - 2, point[0] + 2, point[1] + 2, fill =  'red')
         
-        
-        
-    
-    
-    
-   
-
-
-
-
