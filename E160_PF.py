@@ -179,7 +179,22 @@ class E160_PF:
       Return:
         distance to the closest wall (float)'''
     # add student code here 
-        
+    sensor_heading = self.normalize_angle(particle.heading + sensorT)
+    sensor_slope = math.tan(sensor_heading)
+    sensor_intercept = particle.y - sensor_slope * particle.x
+    wall_slope, wall_intercept = wall.slope_intercept()
+    slope_diff = sensor_slope - wall_slope
+    intercept_diff = wall_intercept - sensor_intercept
+    x_val = intercept_diff/slope_diff
+    y_val = sensor_slope + x_val + sensor_intercept
+    point = (x_val, y_val)
+
+    if(wall.contains_point(point)):
+      distance = math.sqrt((x_val-particle.x)**2 + (y_val-particle.y)**2)
+      return distance
+    else:
+      return float('inf')
+          
         
         
         # end student code here
