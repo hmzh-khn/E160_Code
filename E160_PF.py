@@ -61,11 +61,13 @@ class E160_PF:
       
   def SetRandomStartPos(self, i):
     # add student code here 
-        
+    x_naught = random.random(self.map_minX, self.map_maxX)
+    y_naught = random.random(self.map_minY, self.map_maxY)
+    self.particles[i] = self.Particle(x_naught, y_naught, random.random(-math.pi,math.pi) ,1.0/self.numParticles)  
         
         
         # end student code here
-        pass
+        
 
   def SetKnownStartPos(self, i):
     self.particles[i] = self.known_start
