@@ -114,6 +114,7 @@ class E160_robot:
         
         # localize with particle filter
         self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.range_measurements)
+        self.state_est = self.state_odo
 
         # to out put the true location for display purposes only. 
         self.state_draw = self.state_odo
@@ -126,8 +127,6 @@ class E160_robot:
         
         # send the control measurements to the robot
         self.send_control(self.R, self.L, deltaT)
-    
- 
     
     def update_sensor_measurements(self, deltaT):
         

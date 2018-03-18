@@ -58,16 +58,10 @@ class E160_PF:
       #self.SetRandomStartPos(i)
       self.SetKnownStartPos(i)
 
-      
   def SetRandomStartPos(self, i):
-    # add student code here 
     x_naught = random.random(self.map_minX, self.map_maxX)
     y_naught = random.random(self.map_minY, self.map_maxY)
-    self.particles[i] = self.Particle(x_naught, y_naught, random.random(-math.pi,math.pi) ,1.0/self.numParticles)  
-        
-        
-        # end student code here
-        
+    self.particles[i] = self.Particle(x_naught, y_naught, random.random(-math.pi,math.pi) ,1.0/self.numParticles)
 
   def SetKnownStartPos(self, i):
     self.particles[i] = self.known_start
@@ -103,7 +97,6 @@ class E160_PF:
         
         # end student code here
         
-        
   def CalculateWeight(self, sensor_readings, walls, particle):
     '''Calculate the weight of a particular particle
       Args:
@@ -133,9 +126,6 @@ class E160_PF:
         
         
         # end student code here
-        
-
-
 
   def GetEstimatedPos(self):
     ''' Calculate the mean of the particles and return it 
@@ -151,7 +141,6 @@ class E160_PF:
         
     return self.state
 
-
   def FindMinWallDistance(self, particle, walls, sensorT):
     ''' Given a particle position, walls, and a sensor, find 
       shortest distance to the wall
@@ -161,15 +150,8 @@ class E160_PF:
         sensorT: orientation of the sensor on the robot
       Return:
         distance to the closest wall' (float)'''
-        # add student code here 
-        
-        
-        
-        # end student code here
-        
-    return 0
+    return min([self.FindWallDistance(particle, wall, sensorT) for wall in walls])
     
-
   def FindWallDistance(self, particle, wall, sensorT):
     ''' Given a particle position, a wall, and a sensor, find distance to the wall
       Args:
@@ -178,30 +160,40 @@ class E160_PF:
         sensorT: orientation of the sensor on the robot
       Return:
         distance to the closest wall (float)'''
-    # add student code here 
     sensor_heading = self.normalize_angle(particle.heading + sensorT)
     sensor_slope = math.tan(sensor_heading)
     sensor_intercept = particle.y - sensor_slope * particle.x
     wall_slope, wall_intercept = wall.slope_intercept()
+
+    # if wall slope parallel to sensor slope, sensor will not sense wall
+    if abs(wall_slope) == abs(sensor_slope):
+      return float('inf')
+
     slope_diff = sensor_slope - wall_slope
     intercept_diff = wall_intercept - sensor_intercept
     x_val = intercept_diff/slope_diff
-    y_val = sensor_slope + x_val + sensor_intercept
+
+    # if wall is perfectly vertical, x_vale must be same as wall x_val
+    if abs(wall_slope) == float('inf'):
+      x_val, _ =  wall.point1
+
+    # if sensor line is vertical, intersection will be at this x_point
+    if abs(sensor_slope) == float('inf'):
+      x_val = particle.x
+      y_val = wall_slope * x_val + wall_intercept
+    else:
+      y_val = sensor_slope * x_val + sensor_intercept
     point = (x_val, y_val)
+
+    # ensure that sensor points towards wall (not other direction)
+    if abs(math.atan2(particle.y - y_val, particle.x - x_val) - sensor_heading) >= CONFIG_HEADING_TOLERANCE:
+      return float('inf')
 
     if(wall.contains_point(point)):
       distance = math.sqrt((x_val-particle.x)**2 + (y_val-particle.y)**2)
       return distance
     else:
       return float('inf')
-          
-        
-        
-        # end student code here
-            
-    return 0
-
-  
 
   def normalize_angle(self, ang):
     ''' Wrap angles between -pi and pi'''

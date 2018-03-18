@@ -37,6 +37,9 @@ class E160_wall:
     def slope_intercept(self):
         p1x, p1y = self.point1
         p2x, p2y = self.point2
+        # edge case: if x positions are same, intercept formula divides by 0
+        if p1x == p2x:
+            return (float('inf'), float('inf'))
         slope = (p2y - p1y) / (p2x - p1x)
         intercept = p1y - slope * p1x 
         return (slope, intercept)

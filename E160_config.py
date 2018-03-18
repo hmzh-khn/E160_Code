@@ -39,7 +39,7 @@ CONFIG_DELTA_T = 0.05 # seconds
 """ 
 Set config for E160_graphics.py
 """
-CONFIG_WINDOW_SCALE = 200
+CONFIG_WINDOW_SCALE = 100
 
 
 ##### the intervals for setting the manual velocities
@@ -93,6 +93,11 @@ CONFIG_POINT_TRACKING_ANGLE_BIAS = math.pi/4
 
 
 """
+Config for lab 4
+"""
+CONFIG_HEADING_TOLERANCE = 0.05
+
+"""
 Tick maps (cm per tick)
 """
 # takes 
@@ -131,7 +136,7 @@ CONFIG_FULL_TURN = 2*math.pi
 Set all of the regularly altered configurations here.
 """
 
-CONFIG_LAB_NUMBER = 4
+CONFIG_LAB_NUMBER = 1
 
 ##### SET DESIRED STOP DISTANCE MODE HERE (for Lab 1) #####
 CONFIG_OFFSET_CM = 0.5*2.54
@@ -140,5 +145,5 @@ CONFIG_DESIRED_DISTANCE_CM = 30.0 - CONFIG_OFFSET_CM
 ##### SET HARDWARE MODE HERE (Simulation or Hardware) #####
 CONFIG_ROBOT_MODE = SIMULATION_MODE
 ##### SET CONTROL MODE HERE (Manual or Autonomous) #####
-CONFIG_CONTROL_MODE = AUTONOMOUS_CONTROL_MODE
+CONFIG_CONTROL_MODE = MANUAL_CONTROL_MODE
 
