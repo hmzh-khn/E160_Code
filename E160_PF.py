@@ -16,7 +16,7 @@ class E160_PF:
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 3
+    self.numParticles = 6
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -44,7 +44,7 @@ class E160_PF:
     self.map_minX = -1.0
     self.map_maxY = 1.0
     self.map_minY = -1.0
-    self.known_start = self.Particle(0,0,0,1.0/self.numParticles)
+    self.known_start = self.Particle(0.0,0.0,0.0,1.0/self.numParticles)
 
     self.InitializeParticles()
     self.last_encoder_measurements =[0,0]
@@ -69,7 +69,13 @@ class E160_PF:
     self.particles[i] = self.Particle(x_naught, y_naught, random.random(-math.pi,math.pi) ,1.0/self.numParticles)
 
   def SetKnownStartPos(self, i):
-    self.particles[i] = self.known_start
+    self.particles[i] = self.Particle(0.0,0.0,0.0,1.0/self.numParticles)
+
+  def copyPasteParticle(self, i, copied_particle):
+    self.particles[i] = self.Particle(copied_particle.x,
+                                      copied_particle.y,
+                                      copied_particle.heading,
+                                      copied_particle.weight)
             
   def LocalizeEstWithParticleFilter(self, 
                                     encoder_measurements, 
@@ -86,11 +92,18 @@ class E160_PF:
     # print(encoder_measurements[0], last_encoder_measurements[0])
 
     # randomly propagate the movement
-    print('----')
+    # print('----')
+    total_weight = 0
     for i in range(self.numParticles):
       self.Propagate(encoder_measurements, last_encoder_measurements, i)
-        
-        
+      self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
+      total_weight = total_weight + self.particles[i].weight
+
+    print([p.weight for p in self.particles])
+
+    for i in range(self.numParticles):
+      self.particles[i].weight = self.particles[i].weight / total_weight
+
     return self.GetEstimatedPos()
 
   def Propagate(self, encoder_measurements, last_encoder_measurements, i):
@@ -104,25 +117,29 @@ class E160_PF:
     delta_s, delta_heading = self.particles[i].update_odometry(encoder_measurements, 
                                                                last_encoder_measurements)
     self.particles[i].update_state(delta_s, delta_heading)
-
         
   def CalculateWeight(self, sensor_readings, walls, particle):
     '''Calculate the weight of a particular particle
       Args:
         particle (E160_Particle): a given particle
-        sensor_readings ( [float, ...] ): readings from the IR sesnors
+        sensor_readings ( [float, ...] ): readings from the IR sensors
         walls ([ [four doubles], ...] ): positions of the walls from environment, 
               represented as 4 doubles 
       return:
         new weight of the particle (float) '''
 
     newWeight = 0
-        # add student code here 
-        
-        
-        
-        # end student code here
-    return newWeight
+    
+    min_dist_right = self.FindMinWallDistance(particle, walls, self.sensor_orientation[0])
+    min_dist_straight = self.FindMinWallDistance(particle, walls, self.sensor_orientation[1])
+    min_dist_left = self.FindMinWallDistance(particle, walls, self.sensor_orientation[2])
+
+    error = ((min_dist_right - sensor_readings[0])**2
+             + (min_dist_straight - sensor_readings[1])**2
+             + (min_dist_left - sensor_readings[2])**2)
+
+    # make weights this nonzero
+    return (1/(error + 0.0000001)) + 0.0000001
 
   def Resample(self):
     '''Resample the particles systematically
@@ -130,11 +147,14 @@ class E160_PF:
         None
       Return:
         None'''
-        # add student code here 
-        
-        
-        
-        # end student code here
+    weights = np.array([p.weight for p in self.particles])
+    particles = np.arange(self.numParticles)
+    resampled_particle_ids = np.random.choice(particles, p=weights)
+    
+    old_particles = copy.deepcopy(self.particles)
+
+    for i in range(self.numParticles):
+      copyPasteParticle(i, old_particles[resampled_particles[i]])
 
   def GetEstimatedPos(self):
     ''' Calculate the mean of the particles and return it 
@@ -244,7 +264,7 @@ class E160_PF:
       delta_right = (float(right_encoder_measurement - last_right_encoder_measurement)
                      * rand2)
 
-      print(delta_left, delta_right)
+      # print('delta-dir', delta_left, delta_right)
 
       if self.is_first_run:
           delta_right = 0
@@ -278,11 +298,11 @@ class E160_PF:
 
     def update_state(self, delta_s, delta_heading):
 
-      print(delta_s, delta_heading)
+      # print('delta', delta_s, delta_heading)
       self.x = self.x + math.cos(self.heading + delta_heading / 2) * delta_s
       self.y = self.y + math.sin(self.heading + delta_heading / 2) * delta_s
 
-      print(self.x, self.y, self.heading)
+      # print('state', self.x, self.y, self.heading)
 
       self.heading = self.normalize_angle(self.heading + delta_heading)
 
