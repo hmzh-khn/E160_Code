@@ -7,12 +7,16 @@ from E160_state import*
 from scipy.stats import norm
 
 
+CONFIG_GAUSS_MULT = 0.05
+CONFIG_ROBOT_RAD_M = 0.147 / 2
+CONFIG_WHEEL_RAD_M = 0.034
+
 class E160_PF:
 
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 400
+    self.numParticles = 3
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -57,6 +61,7 @@ class E160_PF:
     for i in range(0, self.numParticles):
       #self.SetRandomStartPos(i)
       self.SetKnownStartPos(i)
+      self.particles[i].is_first_run = True
 
   def SetRandomStartPos(self, i):
     x_naught = random.random(self.map_minX, self.map_maxX)
@@ -66,7 +71,10 @@ class E160_PF:
   def SetKnownStartPos(self, i):
     self.particles[i] = self.known_start
             
-  def LocalizeEstWithParticleFilter(self, encoder_measurements, sensor_readings):
+  def LocalizeEstWithParticleFilter(self, 
+                                    encoder_measurements, 
+                                    last_encoder_measurements, 
+                                    sensor_readings):
     ''' Localize the robot with particle filters. Call everything
       Args: 
         delta_s (float): change in distance as calculated by odometry
@@ -74,28 +82,29 @@ class E160_PF:
         sensor_readings([float, float, float]): sensor readings from range fingers
       Return:
         None'''
-    
-        # add student code here 
-        
-        
-        
-        # end student code here
+
+    # print(encoder_measurements[0], last_encoder_measurements[0])
+
+    # randomly propagate the movement
+    print('----')
+    for i in range(self.numParticles):
+      self.Propagate(encoder_measurements, last_encoder_measurements, i)
         
         
     return self.GetEstimatedPos()
 
-  def Propagate(self, encoder_measurements, i):
+  def Propagate(self, encoder_measurements, last_encoder_measurements, i):
     '''Propagate all the particles from the last state with odometry readings
       Args:
         delta_s (float): distance traveled based on odometry
         delta_heading(float): change in heading based on odometry
       return:
         nothing'''
-        # add student code here 
-        
-        
-        
-        # end student code here
+
+    delta_s, delta_heading = self.particles[i].update_odometry(encoder_measurements, 
+                                                               last_encoder_measurements)
+    self.particles[i].update_state(delta_s, delta_heading)
+
         
   def CalculateWeight(self, sensor_readings, walls, particle):
     '''Calculate the weight of a particular particle
@@ -213,5 +222,74 @@ class E160_PF:
     def __str__(self):
       return str(self.x) + " " + str(self.y) + " " + str(self.heading) + " " + str(self.weight)
 
+    # clean up this function
+    def update_odometry(self, encoder_measurements, last_encoder_measurements):
+
+      delta_s = 0
+      delta_heading = 0
+
+      left_encoder_measurement = encoder_measurements[0]
+      right_encoder_measurement = encoder_measurements[1] 
+
+      last_left_encoder_measurement = last_encoder_measurements[0]
+      last_right_encoder_measurement = last_encoder_measurements[1]
+
+      rand1 = random.gauss(1.0, CONFIG_GAUSS_MULT)
+      rand2 = random.gauss(1.0, CONFIG_GAUSS_MULT)
+
+      # print(left_encoder_measurement, last_left_encoder_measurement)#, right_encoder_measurement - last_right_encoder_measurement)
+
+      delta_left =  (float(left_encoder_measurement - last_left_encoder_measurement)
+                     * rand1)
+      delta_right = (float(right_encoder_measurement - last_right_encoder_measurement)
+                     * rand2)
+
+      print(delta_left, delta_right)
+
+      if self.is_first_run:
+          delta_right = 0
+          delta_left = 0
+          self.is_first_run = False
+
+      # cause the lab said so I like my name better
+      diffEncoder0 = delta_left
+      diffEncoder1 = delta_right
+
+      wheel_circumference = 2 * math.pi * CONFIG_WHEEL_RAD_M
 
 
+      # TODO: implement calibration from ticks to centimeters
+      # left_distance = (delta_left / self.encoder_resolution) * wheel_circumference
+      # right_distance = (delta_right / self.encoder_resolution) * wheel_circumference
+      left_distance  = delta_left  * CONFIG_CM_TO_M *  CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+      right_distance = delta_right * CONFIG_CM_TO_M * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10]
+
+
+      delta_s = (left_distance + right_distance) / 2
+      delta_heading = (right_distance - left_distance) / (2 * CONFIG_ROBOT_RAD_M)
+
+
+      # set current measurements as the last for next cycle - happens in E160_robot.py
+      # self.last_encoder_measurements[0] = left_encoder_measurement
+      # self.last_encoder_measurements[1] = right_encoder_measurement
+          
+      # keep this to return appropriate changes in distance, angle
+      return delta_s, delta_heading 
+
+    def update_state(self, delta_s, delta_heading):
+
+      print(delta_s, delta_heading)
+      self.x = self.x + math.cos(self.heading + delta_heading / 2) * delta_s
+      self.y = self.y + math.sin(self.heading + delta_heading / 2) * delta_s
+
+      print(self.x, self.y, self.heading)
+
+      self.heading = self.normalize_angle(self.heading + delta_heading)
+
+    def normalize_angle(self, ang):
+      ''' Wrap angles between -pi and pi'''
+      while ang < -math.pi:
+        ang = ang + 2 * math.pi
+      while ang > math.pi:
+        ang = ang - 2 * math.pi
+      return ang

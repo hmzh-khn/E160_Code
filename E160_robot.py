@@ -102,6 +102,9 @@ class E160_robot:
 
     def update(self, deltaT):
         
+        self.last_encoder_measurements[0] = self.encoder_measurements[0]
+        self.last_encoder_measurements[1] = self.encoder_measurements[1]
+
         # get sensor measurements
         self.encoder_measurements, self.range_measurements = self.update_sensor_measurements(deltaT)
 
@@ -113,7 +116,7 @@ class E160_robot:
         self.state_odo = self.localize(self.state_odo, self.encoder_measurements, self.range_measurements)
         
         # localize with particle filter
-        self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.range_measurements)
+        self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
         self.state_est = self.state_odo
 
         # to out put the true location for display purposes only. 
@@ -129,7 +132,7 @@ class E160_robot:
         self.send_control(self.R, self.L, deltaT)
     
     def update_sensor_measurements(self, deltaT):
-        
+
         if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
             command = '$S @'
             self.environment.xbee.tx(dest_addr=self.address, data=command)
@@ -278,8 +281,8 @@ class E160_robot:
 
 
         # set current measurements as the last for next cycle
-        self.last_encoder_measurements[0] = left_encoder_measurement
-        self.last_encoder_measurements[1] = right_encoder_measurement
+        # self.last_encoder_measurements[0] = left_encoder_measurement
+        # self.last_encoder_measurements[1] = right_encoder_measurement
 
         # ****************** Additional Student Code: End ************
             
