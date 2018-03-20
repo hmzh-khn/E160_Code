@@ -130,9 +130,10 @@ class E160_PF:
 
     newWeight = 0
     
-    min_dist_right = self.FindMinWallDistance(particle, walls, self.sensor_orientation[0])
-    min_dist_straight = self.FindMinWallDistance(particle, walls, self.sensor_orientation[1])
-    min_dist_left = self.FindMinWallDistance(particle, walls, self.sensor_orientation[2])
+    # upper bound the distance at 1000 m
+    min_dist_right = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[0]), self.FAR_READING)
+    min_dist_straight = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[1]), self.FAR_READING)
+    min_dist_left = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[2]), self.FAR_READING)
 
     error = ((min_dist_right - sensor_readings[0])**2
              + (min_dist_straight - sensor_readings[1])**2
