@@ -7,16 +7,17 @@ from E160_state import*
 from scipy.stats import norm
 
 
-CONFIG_GAUSS_MULT = 0.05
+CONFIG_GAUSS_MULT = 0.1
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
+CONFIG_DELETE_PARTICLE_THRESHOLD = 1/10
 
 class E160_PF:
 
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 6
+    self.numParticles = 100
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -48,8 +49,6 @@ class E160_PF:
 
     self.InitializeParticles()
     self.last_encoder_measurements =[0,0]
-
-    
 
   def InitializeParticles(self):
     ''' Populate self.particles with random Particle 
@@ -89,6 +88,9 @@ class E160_PF:
       Return:
         None'''
 
+    # convert sensor readings to distances (with max of 1000)
+    sensor_readings = [min(reading, self.FAR_READING) for reading in sensor_readings]
+
     # print(encoder_measurements[0], last_encoder_measurements[0])
 
     # randomly propagate the movement
@@ -99,10 +101,11 @@ class E160_PF:
       self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
       total_weight = total_weight + self.particles[i].weight
 
-    print([p.weight for p in self.particles])
-
     for i in range(self.numParticles):
       self.particles[i].weight = self.particles[i].weight / total_weight
+
+    # print([p.weight for p in self.particles])
+    self.Resample()
 
     return self.GetEstimatedPos()
 
@@ -151,12 +154,13 @@ class E160_PF:
         None'''
     weights = np.array([p.weight for p in self.particles])
     particles = np.arange(self.numParticles)
-    resampled_particle_ids = np.random.choice(particles, p=weights)
+    particle_ids = np.random.choice(particles, size=self.numParticles, p=weights, replace=True)
     
     old_particles = copy.deepcopy(self.particles)
 
     for i in range(self.numParticles):
-      copyPasteParticle(i, old_particles[resampled_particles[i]])
+      if self.particles[i].weight < CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles:
+        self.copyPasteParticle(i, old_particles[particle_ids[i]])
 
   def GetEstimatedPos(self):
     ''' Calculate the mean of the particles and return it 
@@ -164,12 +168,9 @@ class E160_PF:
         None
       Return:
         None'''
-        # add student code here 
-        
-        
-        
-        # end student code here
-        
+    arr = np.array([[p.x, p.y, p.heading] for p in self.particles])
+    means = np.mean(arr, axis=0)
+    self.state.set_state(means[0], means[1], means[2])
     return self.state
 
   def FindMinWallDistance(self, particle, walls, sensorT):
@@ -240,6 +241,7 @@ class E160_PF:
       self.y = y
       self.heading = heading
       self.weight = weight
+      self.is_first_run = False
 
     def __str__(self):
       return str(self.x) + " " + str(self.y) + " " + str(self.heading) + " " + str(self.weight)
