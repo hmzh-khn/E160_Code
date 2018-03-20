@@ -135,6 +135,7 @@ class E160_PF:
     min_dist_straight = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[1]), self.FAR_READING)
     min_dist_left = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[2]), self.FAR_READING)
 
+
     error = ((min_dist_right - sensor_readings[0])**2
              + (min_dist_straight - sensor_readings[1])**2
              + (min_dist_left - sensor_readings[2])**2)

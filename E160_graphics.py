@@ -21,6 +21,9 @@ class E160_graphics:
         #self.north_east_frame.pack(anchor = NE)
         self.north_west_frame = Frame(self.tk)
         self.north_west_frame.pack(anchor = W)
+        self.east_north_west_frame = Frame(self.tk)
+
+        self.east_north_west_frame.pack(anchor = E)
         #self.north_frame = Frame(self.tk)
         #self.north_frame.pack(anchor = N)
 
@@ -117,6 +120,13 @@ class E160_graphics:
         self.x_label = Label(self.north_west_frame, textvariable = self.x).pack()
         self.y_label = Label(self.north_west_frame, textvariable = self.y).pack()
         self.theta_label = Label(self.north_west_frame, textvariable = self.theta).pack()
+
+        self.x_real = StringVar()
+        self.y_real = StringVar()
+        self.theta_real = StringVar()
+        self.x_real_label = Label(self.east_north_west_frame, textvariable = self.x_real, anchor='e').pack()
+        self.y_real_label = Label(self.east_north_west_frame, textvariable = self.y_real, anchor='e').pack()
+        self.theta_real_label = Label(self.east_north_west_frame, textvariable = self.theta_real, anchor='e').pack()
        
         # add text entry for desired X
         #self.x_des_label = Label(self.north_frame, text="X desired")
@@ -310,6 +320,10 @@ class E160_graphics:
         self.x.set("X (m):  " + str(self.environment.robots[0].state_est.x))
         self.y.set("Y (m):  " + str(self.environment.robots[0].state_est.y))
         self.theta.set("Theta (rad):  " + str(self.environment.robots[0].state_est.theta))  
+
+        self.x_real.set("X (m):  " + str(self.environment.robots[0].state_odo.x))
+        self.y_real.set("Y (m):  " + str(self.environment.robots[0].state_odo.y))
+        self.theta_real.set("Theta (rad):  " + str(self.environment.robots[0].state_odo.theta))  
 
 
     # called at every iteration of main loop
