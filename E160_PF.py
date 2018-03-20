@@ -17,7 +17,7 @@ class E160_PF:
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 10
+    self.numParticles = 200
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -58,8 +58,8 @@ class E160_PF:
         None'''
     self.particles = self.numParticles*[0]
     for i in range(0, self.numParticles):
-      # self.SetRandomStartPos(i)
-      self.SetKnownStartPos(i)
+      self.SetRandomStartPos(i)
+      #self.SetKnownStartPos(i)
       self.particles[i].is_first_run = True
 
   def SetRandomStartPos(self, i):
@@ -68,7 +68,7 @@ class E160_PF:
     self.particles[i] = self.Particle(x_naught, y_naught, random.uniform(-math.pi,math.pi) ,1.0/self.numParticles)
 
   def SetKnownStartPos(self, i):
-    self.particles[i] = self.Particle(0.0,0.1*(i-5),0.0,1.0/self.numParticles)
+    self.particles[i] = self.Particle(0.0,0.0,0.0,1.0/self.numParticles)
 
   def copyPasteParticle(self, i, copied_particle):
     self.particles[i] = self.Particle(copied_particle.x,
@@ -105,7 +105,7 @@ class E160_PF:
     for i in range(self.numParticles):
       self.particles[i].weight = self.particles[i].weight / total_weight
 
-    print([p.weight for p in self.particles])
+    #print('---')#[p.weight for p in self.particles])
     self.Resample()
 
     return self.GetEstimatedPos()
@@ -139,11 +139,14 @@ class E160_PF:
     min_dist_straight = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[1]), self.FAR_READING)
     min_dist_left = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[2]), self.FAR_READING)
 
-    print('dists', min_dist_right, min_dist_straight, min_dist_left)
+
+    
 
     error = math.exp(-((min_dist_right - sensor_readings[0])**2
                         + (min_dist_straight - sensor_readings[1])**2
                         + (min_dist_left - sensor_readings[2])**2)/self.IR_sigma_m**2)
+
+    #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, error]])
 
     # make weights this nonzero
     return error
@@ -162,7 +165,10 @@ class E160_PF:
 
     for i in range(self.numParticles):
       if self.particles[i].weight < CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles:
-        self.copyPasteParticle(i, old_particles[particle_ids[i]])
+        if random.random() < 0.05:
+          self.SetRandomStartPos(i)
+        else:
+          self.copyPasteParticle(i, old_particles[particle_ids[i]])
 
   def GetEstimatedPos(self):
     ''' Calculate the mean of the particles and return it 
@@ -203,6 +209,7 @@ class E160_PF:
 
     # if wall slope parallel to sensor slope, sensor will not sense wall
     if abs(wall_slope) == abs(sensor_slope):
+      
       return float('inf')
 
     slope_diff = sensor_slope - wall_slope
@@ -222,11 +229,13 @@ class E160_PF:
     point = (x_val, y_val)
 
     # ensure that sensor points towards wall (not other direction)
-    if abs(math.atan2(particle.y - y_val, particle.x - x_val) - sensor_heading) >= CONFIG_HEADING_TOLERANCE:
-      return float('inf')
+
 
     if(wall.contains_point(point)):
       distance = math.sqrt((x_val-particle.x)**2 + (y_val-particle.y)**2)
+      if abs(math.atan2(particle.y - y_val, particle.x - x_val) - sensor_heading) >= CONFIG_HEADING_TOLERANCE:
+        #print('inf cause wrong direction, particle y:', particle.y)
+        return float('inf')
       return distance
     else:
       return float('inf')

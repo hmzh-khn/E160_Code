@@ -25,13 +25,14 @@ class E160_wall:
                     wall_points[2]+self.radius, wall_points[3]-self.radius]
 
     def contains_point(self, p):
+        fudge = 0.00001
         x, y = p
         p1x, p1y = self.point1
         p2x, p2y = self.point2
-        min_x = min(p1x, p2x)
-        max_x = max(p1x, p2x)
-        min_y = min(p1y, p2y)
-        max_y = max(p1y, p2y)
+        min_x = min(p1x, p2x) - fudge
+        max_x = max(p1x, p2x) + fudge
+        min_y = min(p1y, p2y) - fudge
+        max_y = max(p1y, p2y) + fudge
         return x <= max_x and x >= min_x  and y >= min_y and y <= max_y
         
     def slope_intercept(self):
