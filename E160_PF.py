@@ -142,9 +142,9 @@ class E160_PF:
 
     
 
-    error = math.exp(-((min_dist_right - sensor_readings[0])**2
-                        + (min_dist_straight - sensor_readings[1])**2
-                        + (min_dist_left - sensor_readings[2])**2)/self.IR_sigma_m**2)
+    error = math.exp(-((min_dist_right - sensor_readings[2])**2
+                        + (min_dist_straight - sensor_readings[0])**2
+                        + (min_dist_left - sensor_readings[1])**2)/self.IR_sigma_m**2)
 
     #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, error]])
 

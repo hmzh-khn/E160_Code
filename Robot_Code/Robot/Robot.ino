@@ -255,9 +255,17 @@ void sendSensorData() {
   long rightWheel = RightWheel.read();
   //  LeftWheel.write(0);
   //  RightWheel.write(0);
-  char message[30] = "";
+  char message[50] = "";
   char temp[10];
   itoa(front, temp, 10);
+  strcat(message, temp);
+  strcat(message, " ");
+
+  itoa(left, temp, 10);
+  strcat(message, temp);
+  strcat(message, " ");
+
+  itoa(right, temp, 10);
   strcat(message, temp);
   strcat(message, " ");
 

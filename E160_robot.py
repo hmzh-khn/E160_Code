@@ -106,7 +106,9 @@ class E160_robot:
         self.last_encoder_measurements[1] = self.encoder_measurements[1]
 
         # get sensor measurements
-        self.encoder_measurements, self.range_measurements = self.update_sensor_measurements(deltaT)
+        self.encoder_measurements, self.range_voltages = self.update_sensor_measurements(deltaT)
+        self.range_measurements = [CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1))/100 for v in self.range_voltages]
+
 
         # update odometry
         delta_s, delta_theta = self.update_odometry(self.encoder_measurements)

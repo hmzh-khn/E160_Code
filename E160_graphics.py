@@ -21,11 +21,14 @@ class E160_graphics:
         #self.north_east_frame.pack(anchor = NE)
         self.north_west_frame = Frame(self.tk)
         self.north_west_frame.pack(anchor = W)
+
         self.east_north_west_frame = Frame(self.tk)
 
         self.east_north_west_frame.pack(anchor = E)
-        #self.north_frame = Frame(self.tk)
-        #self.north_frame.pack(anchor = N)
+        self.north_frame = Frame(self.north_west_frame)
+        self.north_frame.pack(side='right')
+        self.north_easter_frame = Frame(self.north_frame)
+        self.north_easter_frame.pack(side='right')
 
         self.bottom_frame = Frame(self.tk)
         self.bottom_frame.pack(side = BOTTOM)
@@ -36,7 +39,7 @@ class E160_graphics:
         self.typing_int = 0
 
         self.scale = CONFIG_WINDOW_SCALE
-        self.canvas = Canvas(self.tk, width=self.environment.width*self.scale, height=self.scale* self.environment.height)
+        self.canvas = Canvas(self.tk, width=self.environment.width*self.scale*2, height=self.scale*self.environment.height*2)
         self.tk.title("E160 - Autonomous Robot Navigation")
         self.canvas.bind("<Button-1>", self.callback)
         self.canvas.pack()
@@ -117,16 +120,16 @@ class E160_graphics:
         self.x = StringVar()
         self.y = StringVar()
         self.theta = StringVar()
-        self.x_label = Label(self.north_west_frame, textvariable = self.x).pack()
-        self.y_label = Label(self.north_west_frame, textvariable = self.y).pack()
-        self.theta_label = Label(self.north_west_frame, textvariable = self.theta).pack()
+        self.x_label = Label(self.north_frame, textvariable = self.x).pack()
+        self.y_label = Label(self.north_frame, textvariable = self.y).pack()
+        self.theta_label = Label(self.north_frame, textvariable = self.theta).pack()
 
         self.x_real = StringVar()
         self.y_real = StringVar()
         self.theta_real = StringVar()
-        self.x_real_label = Label(self.east_north_west_frame, textvariable = self.x_real, anchor='e').pack()
-        self.y_real_label = Label(self.east_north_west_frame, textvariable = self.y_real, anchor='e').pack()
-        self.theta_real_label = Label(self.east_north_west_frame, textvariable = self.theta_real, anchor='e').pack()
+        self.x_real_label = Label(self.north_easter_frame, textvariable = self.x_real, anchor='e').pack()
+        self.y_real_label = Label(self.north_easter_frame, textvariable = self.y_real, anchor='e').pack()
+        self.theta_real_label = Label(self.north_easter_frame, textvariable = self.theta_real, anchor='e').pack()
        
         # add text entry for desired X
         #self.x_des_label = Label(self.north_frame, text="X desired")
