@@ -14,14 +14,25 @@ class E160_robot:
         self.environment = environment
 
         # state estimation and destination
-        self.state_est = E160_state()
-        self.state_est.set_state(0,0,0)
-        self.state_des = E160_state()
-        self.state_des.set_state(0,0,0)
-        self.state_draw = E160_state()
-        self.state_draw.set_state(0,0,0) 
-        self.state_odo = E160_state()
-        self.state_odo.set_state(0,0,0)
+        if(CONFIG_COURSE != INDOOR_COURSE):
+            self.state_est = E160_state()
+            self.state_est.set_state(0,0,0)
+            self.state_des = E160_state()
+            self.state_des.set_state(0,0,0)
+            self.state_draw = E160_state()
+            self.state_draw.set_state(0,0,0) 
+            self.state_odo = E160_state()
+            self.state_odo.set_state(0,0,0)
+        else:
+            x0, y0, t0 = 10.25, 9, math.pi/2
+            self.state_est = E160_state()
+            self.state_est.set_state(x0, y0, t0)
+            self.state_des = E160_state()
+            self.state_des.set_state(x0, y0, t0)
+            self.state_draw = E160_state()
+            self.state_draw.set_state(x0, y0, t0) 
+            self.state_odo = E160_state()
+            self.state_odo.set_state(x0, y0, t0)
 
         self.R = 0
         self.L = 0
@@ -113,6 +124,9 @@ class E160_robot:
         self.encoder_measurements, self.range_voltages = self.update_sensor_measurements(deltaT)
         if CONFIG_ROBOT_MODE == HARDWARE_MODE:
             self.range_measurements = [CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1))/100 for v in self.range_voltages]
+            self.range_measurements[0] = self.range_measurements[0] + CONFIG_FRONT_SENSOR_OFFSET_CM
+            self.range_measurements[1] = self.range_measurements[1] + CONFIG_LEFT_SENSOR_OFFSET_CM 
+            self.range_measurements[2] = self.range_measurements[2] + CONFIG_RIGHT_SENSOR_OFFSET_CM 
         else:    
             self.range_measurements = self.range_voltages
 
@@ -154,12 +168,11 @@ class E160_robot:
             # left encoder, right encoder
             encoder_measurements = [encoder_measurements[1], encoder_measurements[0]]
             range_measurements = data[:-2]
-            print(encoder_measurements)
+            
         
         # obtain sensor measurements
         elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
-            print(encoder_measurements)
             sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0])
             sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1])
             sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2])
