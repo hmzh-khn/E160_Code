@@ -501,10 +501,16 @@ class E160_robot:
                 
             # 4d. Convert wheel velocities in cm/s to wheel velocities in ticks/s.
             # TODO: Finish up map, design interpolation for cm to ticks conversion
-            right_ticks_per_sec = (right_cm_per_sec 
-                                   / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
-            left_ticks_per_sec  = (left_cm_per_sec 
-                                   / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
+            if CONFIG_IN_HARDWARE_MODE(self.environment.robot_mode):
+                right_ticks_per_sec = (left_cm_per_sec 
+                                       / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
+                left_ticks_per_sec  = (right_cm_per_sec 
+                                       / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
+            if CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
+                right_ticks_per_sec = (right_cm_per_sec 
+                                       / CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
+                left_ticks_per_sec  = (left_cm_per_sec 
+                                       / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
 
 
             # print(right_ticks_per_sec, left_ticks_per_sec)
