@@ -17,7 +17,7 @@ class E160_PF:
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 200
+    self.numParticles = 1  
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -91,10 +91,8 @@ class E160_PF:
     # convert sensor readings to distances (with max of 1000)
     sensor_readings = [min(reading, self.FAR_READING) for reading in sensor_readings]
 
-    # print(encoder_measurements[0], last_encoder_measurements[0])
 
     # randomly propagate the movement
-    # print('----')
     total_weight = 0
     for i in range(self.numParticles):
       if encoder_measurements != last_encoder_measurements:
@@ -105,7 +103,6 @@ class E160_PF:
     for i in range(self.numParticles):
       self.particles[i].weight = self.particles[i].weight / total_weight
 
-    #print('---')#[p.weight for p in self.particles])
     self.Resample()
 
     return self.GetEstimatedPos()
@@ -145,7 +142,7 @@ class E160_PF:
     error = math.exp(-((min_dist_right - sensor_readings[2])**2
                         + (min_dist_straight - sensor_readings[0])**2
                         + (min_dist_left - sensor_readings[1])**2)/self.IR_sigma_m**2)
-
+    #print(error)
     #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, error]])
 
     # make weights this nonzero
@@ -208,8 +205,7 @@ class E160_PF:
     wall_slope, wall_intercept = wall.slope_intercept()
 
     # if wall slope parallel to sensor slope, sensor will not sense wall
-    if abs(wall_slope) == abs(sensor_slope):
-      
+    if wall_slope == sensor_slope:
       return float('inf')
 
     slope_diff = sensor_slope - wall_slope
@@ -217,17 +213,17 @@ class E160_PF:
     x_val = intercept_diff/slope_diff
 
     # if wall is perfectly vertical, x_vale must be same as wall x_val
-    if abs(wall_slope) == float('inf'):
+    if abs(wall_slope) > 1000:
       x_val, _ =  wall.point1
 
     # if sensor line is vertical, intersection will be at this x_point
-    if abs(sensor_slope) == float('inf'):
+    if abs(sensor_slope) > 1000:
       x_val = particle.x
       y_val = wall_slope * x_val + wall_intercept
     else:
       y_val = sensor_slope * x_val + sensor_intercept
     point = (x_val, y_val)
-
+    print(point)
     # ensure that sensor points towards wall (not other direction)
 
 
@@ -315,11 +311,9 @@ class E160_PF:
 
     def update_state(self, delta_s, delta_heading):
 
-      # print('delta', delta_s, delta_heading)
       self.x = self.x + math.cos(self.heading + delta_heading / 2) * delta_s
       self.y = self.y + math.sin(self.heading + delta_heading / 2) * delta_s
 
-      # print('state', self.x, self.y, self.heading)
 
       self.heading = self.normalize_angle(self.heading + delta_heading)
 

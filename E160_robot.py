@@ -107,7 +107,10 @@ class E160_robot:
 
         # get sensor measurements
         self.encoder_measurements, self.range_voltages = self.update_sensor_measurements(deltaT)
-        self.range_measurements = [CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1))/100 for v in self.range_voltages]
+        if CONFIG_ROBOT_MODE == HARDWARE_MODE:
+            self.range_measurements = [CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1))/100 for v in self.range_voltages]
+        else:    
+            self.range_measurements = self.range_voltages
 
 
         # update odometry
@@ -144,6 +147,7 @@ class E160_robot:
             data = update['rf_data'].decode().split(' ')[:-1]
             data = [int(x) for x in data]
             encoder_measurements = data[-2:]
+            encoder_measurements = [encoder_measurements[1], encoder_measurements[0]]
             range_measurements = data[:-2]
         
         # obtain sensor measurements
