@@ -123,6 +123,8 @@ Conversions
 """
 CONFIG_CM_TO_M = 0.01
 CONFIG_M_TO_CM = 100
+CONFIG_IN_TO_M = 0.0254
+CONFIG_M_TO_IN = 39.37
 CONFIG_DEGS_PER_REVOLUTION = 360 # degrees per revolution (i.e. per 2 pi)
 
 
