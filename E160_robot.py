@@ -75,7 +75,7 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        self.path = [(E160_state(0,0,0))]
+        self.path = [E160_state(0,0,0), E160_state(0.25,0,0), E160_state(-0.3,0, math.pi)]
         self.path_current_pos = 0
         self.is_path_tracked = False
         self.path_tracking_pause_duration = 0
@@ -119,7 +119,7 @@ class E160_robot:
         
         # localize with particle filter
         self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
-        #self.state_est = self.state_odo
+        # self.state_est = self.state_odo
 
         # to out put the true location for display purposes only. 
         self.state_draw = self.state_odo
@@ -194,7 +194,7 @@ class E160_robot:
                 R, L = self.lab3_controller(range_measurements)
 
             elif CONFIG_LAB_NUMBER == 4:
-                pass
+                R, L = self.lab4_controller(range_measurements)
 
             elif CONFIG_LAB_NUMBER == 5:
                 pass
@@ -386,6 +386,25 @@ class E160_robot:
                 desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
 
         return desiredWheelSpeedR, desiredWheelSpeedL
+    
+
+    def lab4_controller(self, range_measurements):
+        if self.environment.control_mode == "MANUAL CONTROL MODE":
+            desiredWheelSpeedR = self.manual_control_right_motor
+            desiredWheelSpeedL = self.manual_control_left_motor
+            
+        elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
+            self.path_tracker = self.create_path_tracker(self.path)
+
+            desiredWheelSpeedR, desiredWheelSpeedL = (0, 0)
+
+            if self.is_path_tracked:
+                self.path_current_pos = 0
+            else:
+                desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
+
+        return desiredWheelSpeedR, desiredWheelSpeedL
+
     ###### END LAB CONTROLLERS ######
 
     ###### LAB 3 HELPER FUNCTIONS ######
@@ -442,7 +461,7 @@ class E160_robot:
             # RENAME THIS VARIABLE
             if at_point == 1:
                 negated_angle_final = self.short_angle(negated_angle_final)
-            print(negated_angle_final)
+            # print(negated_angle_final)
 
             # 3. Identify desired velocities (bound by max velocity)
             self.v = care_about_trajectory * go_forward * self.K_rho * distance_to_point
@@ -477,7 +496,7 @@ class E160_robot:
                                    / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
 
 
-            print(right_ticks_per_sec, left_ticks_per_sec)
+            # print(right_ticks_per_sec, left_ticks_per_sec)
             # 5. Check if we are close enough to desired destination
             # TODO: add a threshold
             self.point_tracked = False
@@ -547,13 +566,13 @@ class E160_robot:
 
         if(distance_to_point < 2*acceptable_distance):
             at_point = 1
-            print('switch to rotate control 2')
+            # print('switch to rotate control 2')
 
         if(distance_to_point < acceptable_distance/2):
             care_about_trajectory = 0
             # can switch K_beta to be positive after translation is over
             beta_modifier *= -1.0 #/self.speedy
-            print('switch to rotate control 0.5')
+            # print('switch to rotate control 0.5')
 
         return reached_destination, at_point, care_about_trajectory, beta_modifier
 
