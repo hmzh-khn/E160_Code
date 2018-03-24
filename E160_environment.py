@@ -44,7 +44,6 @@ class E160_environment:
             (25.25,-17)]
             indoor_walls = [(0,14),(0,11),(11,12),(12,13),(13,17),(17,16),(16,15),(15,14),(1,5),(5,6),(4,2),(6,22),(22,4),(4,22),(7,9),(9,10),(10,8),(19,20),(20,21),(21,18),(18,19)]
             for wall in indoor_walls:
-                print(wall)
                 point1 = indoor_points[wall[0]]
                 point2 = indoor_points[wall[1]]
                 orientStr = "horizontal"
@@ -65,7 +64,6 @@ class E160_environment:
                 y1 = (point1[1] + m2in/2) * in2m
                 x2 = (point2[0] - m2in/2) * in2m
                 y2 = (point2[1] + m2in/2) * in2m
-                print(x1, y1, x2, y2    )
                 self.walls.append(E160_wall([x1,y1,x2,y2],orientStr))
         else:
             self.walls.append(E160_wall([x*in2m for x in [-19, 8.5, -19, -10.5]],"vertical"))

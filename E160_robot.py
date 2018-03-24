@@ -22,10 +22,10 @@ INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
                       E160_state(36.5, 28.125, 5*CONFIG_EIGHTH_TURN),
                       E160_state(38.5, 11.5, -CONFIG_QUARTER_TURN),
                       E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
-                      E160_state(16.5, 12, CONFIG_HALF_TURN),]
+                      E160_state(60.5, 12, CONFIG_HALF_TURN),]
 
-[s.set_state(CONFIG_IN_TO_M * s.x, CONFIG_IN_TO_M * s.y, s.theta) for s in INDOOR_TEST_PATH_1]
-
+[s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in INDOOR_TEST_PATH_1]
+# print([str(s) for s in INDOOR_TEST_PATH_1])
 
 class E160_robot:
 
@@ -641,6 +641,7 @@ class E160_robot:
 
             # if the previous point has been reached, go to the next point
             if self.point_tracked:
+                print("Point ", self.path_current_pos, ", ", point, ", is tracked.")
                 self.path_current_pos += 1
                 # slight delay for testing reasons
                 time.sleep(self.path_tracking_pause_duration)

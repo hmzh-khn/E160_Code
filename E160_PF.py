@@ -41,10 +41,10 @@ class E160_PF:
     self.state.set_state(0,0,0)
 
     # TODO: change this later
-    self.map_maxX = 1.0
-    self.map_minX = -1.0
-    self.map_maxY = 1.0
-    self.map_minY = -1.0
+    self.map_maxX = CONFIG_MAP_MAX_X_M
+    self.map_minX = CONFIG_MAP_MIN_X_M
+    self.map_maxY = CONFIG_MAP_MAX_Y_M
+    self.map_minY = CONFIG_MAP_MIN_Y_M
     self.known_start = self.Particle(0.0,0.0,0.0,1.0/self.numParticles)
 
     self.InitializeParticles()
