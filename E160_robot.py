@@ -43,7 +43,7 @@ class E160_robot:
             self.state_odo = E160_state()
             self.state_odo.set_state(0,0,0)
         else:
-            x0, y0, t0 = 10.25, 9, math.pi/2
+            x0, y0, t0 = (10.25-CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, (-9+CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, math.pi/2
             self.state_est = E160_state()
             self.state_est.set_state(x0, y0, t0)
             self.state_des = E160_state()
