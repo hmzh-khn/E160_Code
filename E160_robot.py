@@ -75,7 +75,11 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        self.path = [E160_state(0,0,0), E160_state(0.25,0,0), E160_state(-0.3,0, math.pi)]
+        self.path = [E160_state(0,0,0), 
+                     E160_state(0.25,0,0), 
+                     E160_state(-0.3,0, math.pi),
+                     E160_state(-0.3,0.5, math.pi),
+                     E160_state(-0.1,-0.1, math.pi)]
         self.path_current_pos = 0
         self.is_path_tracked = False
         self.path_tracking_pause_duration = 0
@@ -122,7 +126,7 @@ class E160_robot:
         
         # localize with particle filter
         self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
-        # self.state_est = self.state_odo
+        self.state_est = self.state_odo
 
         # to out put the true location for display purposes only. 
         self.state_draw = self.state_odo
@@ -147,16 +151,19 @@ class E160_robot:
             data = update['rf_data'].decode().split(' ')[:-1]
             data = [int(x) for x in data]
             encoder_measurements = data[-2:]
+            # left encoder, right encoder
             encoder_measurements = [encoder_measurements[1], encoder_measurements[0]]
             range_measurements = data[:-2]
+            print(encoder_measurements)
         
         # obtain sensor measurements
         elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
+            print(encoder_measurements)
             sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0])
             sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1])
             sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2])
-            range_measurements = [sensor1, sensor2, sensor3]
+            range_measurements = [sensor2, sensor3, sensor1]
         
         return encoder_measurements, range_measurements
         

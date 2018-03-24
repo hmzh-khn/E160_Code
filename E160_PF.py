@@ -10,14 +10,14 @@ from scipy.stats import norm
 CONFIG_GAUSS_MULT = 0.2
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
-CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/20
+CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/4
 
 class E160_PF:
 
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 1  
+    self.numParticles = 100
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -27,10 +27,10 @@ class E160_PF:
     self.FAR_READING = 1.5
     
     # PF parameters
-    self.IR_sigma_m = 0.5 # Range finder s.d
+    self.IR_sigma_m = 0.2 # Range finder s.d
     self.odom_xy_sigma = 1.25 # odometry delta_s s.d
     self.odom_heading_sigma = 0.75  # odometry heading s.d
-    self.particle_weight_sum = 0
+    # self.particle_weight_sum = 0
 
     # define the sensor orientations
     self.sensor_orientation = [-math.pi/2, 0, math.pi/2] # orientations of the sensors on robot
@@ -59,7 +59,7 @@ class E160_PF:
     self.particles = self.numParticles*[0]
     for i in range(0, self.numParticles):
       self.SetRandomStartPos(i)
-      #self.SetKnownStartPos(i)
+      # self.SetKnownStartPos(i)
       self.particles[i].is_first_run = True
 
   def SetRandomStartPos(self, i):
@@ -98,6 +98,8 @@ class E160_PF:
       if encoder_measurements != last_encoder_measurements:
         self.Propagate(encoder_measurements, last_encoder_measurements, i)
         self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
+        if self.particles[i].weight < 0.01:
+          self.SetRandomStartPos(i)
       total_weight = total_weight + self.particles[i].weight
 
     for i in range(self.numParticles):
@@ -136,17 +138,16 @@ class E160_PF:
     min_dist_straight = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[1]), self.FAR_READING)
     min_dist_left = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[2]), self.FAR_READING)
 
+    error = ((min_dist_right - sensor_readings[2])**2
+              + (min_dist_straight - sensor_readings[0])**2
+              + (min_dist_left - sensor_readings[1])**2)
 
-    
-
-    error = math.exp(-((min_dist_right - sensor_readings[2])**2
-                        + (min_dist_straight - sensor_readings[0])**2
-                        + (min_dist_left - sensor_readings[1])**2)/self.IR_sigma_m**2)
-    #print(error)
-    #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, error]])
+    prob = math.exp(-error/self.IR_sigma_m**2)
+    #print(prob)
+    #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, prob]])
 
     # make weights this nonzero
-    return error
+    return prob
 
   def Resample(self):
     '''Resample the particles systematically
@@ -161,7 +162,7 @@ class E160_PF:
     old_particles = copy.deepcopy(self.particles)
 
     for i in range(self.numParticles):
-      if self.particles[i].weight < CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles:
+      if self.particles[i].weight <= CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles:
         if random.random() < 0.05:
           self.SetRandomStartPos(i)
         else:
@@ -223,7 +224,7 @@ class E160_PF:
     else:
       y_val = sensor_slope * x_val + sensor_intercept
     point = (x_val, y_val)
-    print(point)
+    # print(point)
     # ensure that sensor points towards wall (not other direction)
 
 

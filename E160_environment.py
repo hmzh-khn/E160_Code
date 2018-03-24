@@ -23,6 +23,8 @@ class E160_environment:
         self.walls.append(E160_wall([x*in2m for x in [-19, -10.5, 19.5, -10.5]],"horizontal"))
 
         self.walls.append(E160_wall([x*in2m for x in [19.5, 7.5, 25.5, 23.5]],"horizontal"))
+
+        self.walls.append(E160_wall([x*in2m for x in [-19.0, 23.5, 25.5, 23.5]],"horizontal"))
             
         # create vars for hardware vs simulation
         self.robot_mode = CONFIG_ROBOT_MODE

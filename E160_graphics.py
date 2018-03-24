@@ -313,9 +313,9 @@ class E160_graphics:
         
     def update_labels(self):
         
-        self.range_sensor_var_1.set("Range 1 (m):  " + str(self.environment.robots[0].range_measurements[0]))
-        self.range_sensor_var_2.set("Range 2 (m):  " + str(self.environment.robots[0].range_measurements[1]))
-        self.range_sensor_var_3.set("Range 3 (m):  " + str(self.environment.robots[0].range_measurements[2]))
+        self.range_sensor_var_1.set("Range 1 - Straight (m):  " + str(self.environment.robots[0].range_measurements[0]))
+        self.range_sensor_var_2.set("Range 2 - Left     (m):  " + str(self.environment.robots[0].range_measurements[1]))
+        self.range_sensor_var_3.set("Range 3 - Right    (m):  " + str(self.environment.robots[0].range_measurements[2]))
                 
         self.encoder_sensor_var_0.set("Encoder 0 (ticks L):  " + str(self.environment.robots[0].encoder_measurements[0]))
         self.encoder_sensor_var_1.set("Encoder 1 (ticks R):  " + str(self.environment.robots[0].encoder_measurements[1]))
