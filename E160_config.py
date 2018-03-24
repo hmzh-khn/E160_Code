@@ -123,12 +123,15 @@ Conversions
 """
 CONFIG_CM_TO_M = 0.01
 CONFIG_M_TO_CM = 100
+CONFIG_IN_TO_CM = 2.54
+CONFIG_IN_TO_M = CONFIG_IN_TO_CM * CONFIG_CM_TO_M
 CONFIG_DEGS_PER_REVOLUTION = 360 # degrees per revolution (i.e. per 2 pi)
 
 
 """
 Known Angles
 """
+CONFIG_EIGHTH_TURN = math.pi/4
 CONFIG_QUARTER_TURN = math.pi/2
 CONFIG_HALF_TURN = math.pi
 CONFIG_FULL_TURN = 2*math.pi

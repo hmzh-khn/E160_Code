@@ -7,6 +7,25 @@ import datetime
 import time
 import random
 
+TEST_PATH_1 = [E160_state(0,0,0), 
+               E160_state(0.25,0,0), 
+               E160_state(-0.3,0, math.pi),
+               E160_state(-0.3,0.5, math.pi),
+               E160_state(-0.1,-0.1, math.pi)]
+
+INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
+                      E160_state(10.25, 9, CONFIG_QUARTER_TURN),
+                      E160_state(13.5, 34, CONFIG_QUARTER_TURN),
+                      E160_state(13.5, 34, 3*CONFIG_EIGHTH_TURN),
+                      E160_state(25, 41.5, 3*CONFIG_EIGHTH_TURN),
+                      E160_state(25, 41.5, 5*CONFIG_EIGHTH_TURN),
+                      E160_state(36.5, 28.125, 5*CONFIG_EIGHTH_TURN),
+                      E160_state(38.5, 11.5, -CONFIG_QUARTER_TURN),
+                      E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
+                      E160_state(16.5, 12, CONFIG_HALF_TURN),]
+
+[s.set_state(CONFIG_IN_TO_M * s.x, CONFIG_IN_TO_M * s.y, s.theta) for s in INDOOR_TEST_PATH_1]
+
 
 class E160_robot:
 
@@ -86,11 +105,7 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        self.path = [E160_state(0,0,0), 
-                     E160_state(0.25,0,0), 
-                     E160_state(-0.3,0, math.pi),
-                     E160_state(-0.3,0.5, math.pi),
-                     E160_state(-0.1,-0.1, math.pi)]
+        self.path = INDOOR_TEST_PATH_1
         self.path_current_pos = 0
         self.is_path_tracked = False
         self.path_tracking_pause_duration = 0
