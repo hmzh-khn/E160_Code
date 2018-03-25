@@ -27,7 +27,7 @@ class E160_PF:
     self.FAR_READING = 1.5
     
     # PF parameters
-    self.IR_sigma_m = 0.2 # Range finder s.d
+    self.IR_sigma_m = 0.3 # Range finder s.d
     self.odom_xy_sigma = 1.25 # odometry delta_s s.d
     self.odom_heading_sigma = 0.75  # odometry heading s.d
     # self.particle_weight_sum = 0
@@ -58,8 +58,8 @@ class E160_PF:
         None'''
     self.particles = self.numParticles*[0]
     for i in range(0, self.numParticles):
-      self.SetRandomStartPos(i)
-      # self.SetKnownStartPos(i)
+      # self.SetRandomStartPos(i)
+      self.SetKnownStartPos(i)
       self.particles[i].is_first_run = True
 
   def SetRandomStartPos(self, i):
@@ -68,7 +68,7 @@ class E160_PF:
     self.particles[i] = self.Particle(x_naught, y_naught, random.uniform(-math.pi,math.pi) ,1.0/self.numParticles)
 
   def SetKnownStartPos(self, i):
-    self.particles[i] = self.Particle(0.0,0.0,0.0,1.0/self.numParticles)
+    self.particles[i] = self.Particle((10.25-CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, (-9+CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, math.pi/2,1.0/self.numParticles)
 
   def copyPasteParticle(self, i, copied_particle):
     self.particles[i] = self.Particle(copied_particle.x,
