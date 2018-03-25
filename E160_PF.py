@@ -190,6 +190,18 @@ class E160_PF:
         sensorT: orientation of the sensor on the robot
       Return:
         distance to the closest wall' (float)'''
+
+    #Handle the off centeritude of the horizontal sensors
+    sensor_vertical_offset = 0 #straight sensor or in simulation
+    if CONFIG_IN_HARDWARE_MODE(CONFIG_ROBOT_MODE):
+      if sensorT > 0.1: #Left sensor
+        sensor_vertical_offset = CONFIG_LEFT_VERTICAL_OFFSET
+      elif sensotT < - 0.1:
+        sensor_vertical_offset = CONFIG_RIGHT_VERTICAL_OFFSET
+
+
+    particle.x = particle.x + math.cos(particle.heading) * sensor_vertical_offset
+    particle.y = particle.y + math.sin(particle.heading) * sensor_vertical_offset
     return min([self.FindWallDistance(particle, wall, sensorT) for wall in walls])
     
   def FindWallDistance(self, particle, wall, sensorT):
