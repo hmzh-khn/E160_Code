@@ -7,7 +7,7 @@ from E160_state import*
 from scipy.stats import norm
 
 
-CONFIG_GAUSS_MULT = 0.2
+CONFIG_GAUSS_MULT = 0.1
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
 CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/4
@@ -17,7 +17,7 @@ class E160_PF:
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 1
+    self.numParticles = 100
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -58,8 +58,8 @@ class E160_PF:
         None'''
     self.particles = self.numParticles*[0]
     for i in range(0, self.numParticles):
-      self.SetRandomStartPos(i)
-      # self.SetKnownStartPos(i)
+      # self.SetRandomStartPos(i)
+      self.SetKnownStartPos(i)
       self.particles[i].is_first_run = True
 
   def SetRandomStartPos(self, i):
@@ -105,7 +105,6 @@ class E160_PF:
           if old_weight > 0.9 : no_good_measurements=False  
         if self.particles[i].weight < 0.01 and no_good_measurements:
           if random.random() < 0.1:
-            print('weights on delete',self.particles[i].recent_weights)
             self.SetRandomStartPos(i)
       total_weight = total_weight + self.particles[i].weight
 
@@ -210,9 +209,10 @@ class E160_PF:
       elif sensorT < - 0.1:
         sensor_vertical_offset = CONFIG_RIGHT_VERTICAL_OFFSET
 
+    temp_particle = self.Particle(0.0,0.0,particle.heading,1.0/self.numParticles)
+    temp_particle.x = particle.x + math.cos(particle.heading) * sensor_vertical_offset
+    temp_particle.y = particle.y + math.sin(particle.heading) * sensor_vertical_offset
 
-    particle.x = particle.x + math.cos(particle.heading) * sensor_vertical_offset
-    particle.y = particle.y + math.sin(particle.heading) * sensor_vertical_offset
     return min([self.FindWallDistance(particle, wall, sensorT) for wall in walls])
     
   def FindWallDistance(self, particle, wall, sensorT):
@@ -247,14 +247,12 @@ class E160_PF:
     else:
       y_val = sensor_slope * x_val + sensor_intercept
     point = (x_val, y_val)
-    # print(point)
     # ensure that sensor points towards wall (not other direction)
 
 
     if(wall.contains_point(point)):
       distance = math.sqrt((x_val-particle.x)**2 + (y_val-particle.y)**2)
       if abs(math.atan2(particle.y - y_val, particle.x - x_val) - sensor_heading) >= CONFIG_HEADING_TOLERANCE:
-        #print('inf cause wrong direction, particle y:', particle.y)
         return float('inf')
       return distance
     else:
@@ -338,8 +336,8 @@ class E160_PF:
     def update_state(self, delta_s, delta_heading):
 
       self.x = self.x + math.cos(self.heading + delta_heading / 2) * delta_s
+      
       self.y = self.y + math.sin(self.heading + delta_heading / 2) * delta_s
-
 
       self.heading = self.normalize_angle(self.heading + delta_heading)
 

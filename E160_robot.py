@@ -27,7 +27,6 @@ INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
 STD_PATH = [E160_state(36*CONFIG_IN_TO_M,0,0)]
 
 [s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in INDOOR_TEST_PATH_1]
-# print([str(s) for s in INDOOR_TEST_PATH_1])
 
 class E160_robot:
 
@@ -107,7 +106,7 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        if(CONFIG_COURSE != INDOOR_COURSE):
+        if(CONFIG_COURSE == INDOOR_COURSE):
             self.path = INDOOR_TEST_PATH_1
         else:
             self.path = STD_PATH
@@ -144,9 +143,9 @@ class E160_robot:
         self.encoder_measurements, self.range_voltages = self.update_sensor_measurements(deltaT)
         if CONFIG_ROBOT_MODE == HARDWARE_MODE:
             self.range_measurements = []
-            for i in range(len(self.range_voltages)):
+            for i in range(len(self.range_voltages)-2):
                 v = self.range_voltages[i]
-                self.range_measurements.append(CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1),i)/100)
+                self.range_measurements.append(CONFIG_DISTANCE_CALIBRATION(max(v,1),i)/100)
             #self.range_measurements = [CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1))/100 for v in self.range_voltages]
             self.range_measurements[0] = self.range_measurements[0] + CONFIG_FRONT_SENSOR_OFFSET_M
             self.range_measurements[1] = self.range_measurements[1] + CONFIG_LEFT_SENSOR_OFFSET_M 
@@ -457,8 +456,6 @@ class E160_robot:
 
     ###### LAB 3 HELPER FUNCTIONS ######
     def point_tracker_control(self):
-        # print('point tracking', self.state_des, self.point_tracked)
-        # print(self.state_des)
 
         right_ticks_per_sec = 0
         left_ticks_per_sec  = 0
@@ -487,7 +484,6 @@ class E160_robot:
             care_about_trajectory, \
             beta_modifier = self._update_modifiers(acceptable_distance, 
                                                    acceptable_angle)
-            # print("Modifiers: ",reached_goal_state, at_point,care_about_trajectory,beta_modifier)
             if reached_goal_state:
                 self.point_tracked = True
                 self.was_forward = 0
@@ -509,7 +505,6 @@ class E160_robot:
             # RENAME THIS VARIABLE
             if at_point == 1:
                 negated_angle_final = self.short_angle(negated_angle_final)
-            # print(negated_angle_final)
 
             # 3. Identify desired velocities (bound by max velocity)
             self.v = care_about_trajectory * go_forward * self.K_rho * distance_to_point
@@ -550,7 +545,6 @@ class E160_robot:
                                        / CONFIG_LEFT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
 
 
-            # print(right_ticks_per_sec, left_ticks_per_sec)
             # 5. Check if we are close enough to desired destination
             # TODO: add a threshold
             self.point_tracked = False
@@ -620,13 +614,11 @@ class E160_robot:
 
         if(distance_to_point < 2*acceptable_distance):
             at_point = 1
-            # print('switch to rotate control 2')
 
         if(distance_to_point < acceptable_distance/2):
             care_about_trajectory = 0
             # can switch K_beta to be positive after translation is over
             beta_modifier *= -1.0 #/self.speedy
-            # print('switch to rotate control 0.5')
 
         return reached_destination, at_point, care_about_trajectory, beta_modifier
 
