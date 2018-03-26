@@ -17,7 +17,7 @@ class E160_PF:
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 100
+    self.numParticles = 1
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -58,8 +58,8 @@ class E160_PF:
         None'''
     self.particles = self.numParticles*[0]
     for i in range(0, self.numParticles):
-      # self.SetRandomStartPos(i)
-      self.SetKnownStartPos(i)
+      self.SetRandomStartPos(i)
+      # self.SetKnownStartPos(i)
       self.particles[i].is_first_run = True
 
   def SetRandomStartPos(self, i):
@@ -88,7 +88,7 @@ class E160_PF:
       Return:
         None'''
 
-    # convert sensor readings to distances (with max of 1000)
+    # convert sensor readings to distances (with max of 1.5m)
     sensor_readings = [min(reading, self.FAR_READING) for reading in sensor_readings]
 
 
@@ -98,8 +98,15 @@ class E160_PF:
       if encoder_measurements != last_encoder_measurements:
         self.Propagate(encoder_measurements, last_encoder_measurements, i)
         self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
-        if self.particles[i].weight < 0.01:
-          self.SetRandomStartPos(i)
+        no_good_measurements = True
+        self.particles[i].recent_weights.insert(0,self.particles[i].weight)
+        self.particles[i].recent_weights.pop()
+        for old_weight in self.particles[i].recent_weights: 
+          if old_weight > 0.9 : no_good_measurements=False  
+        if self.particles[i].weight < 0.01 and no_good_measurements:
+          if random.random() < 0.1:
+            print('weights on delete',self.particles[i].recent_weights)
+            self.SetRandomStartPos(i)
       total_weight = total_weight + self.particles[i].weight
 
     for i in range(self.numParticles):
@@ -138,9 +145,13 @@ class E160_PF:
     min_dist_straight = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[1]), self.FAR_READING)
     min_dist_left = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[2]), self.FAR_READING)
 
-    error = ((min_dist_right - sensor_readings[2])**2
-              + (min_dist_straight - sensor_readings[0])**2
-              + (min_dist_left - sensor_readings[1])**2)
+    error_right = min_dist_right - sensor_readings[2]
+    error_straight = min_dist_straight - sensor_readings[0]
+    error_left = min_dist_left - sensor_readings[1]
+
+    error = ((error_right)**2
+              + (error_straight)**2
+              + (error_left**2))
 
     prob = math.exp(-error/self.IR_sigma_m**2)
     #print(prob)
@@ -196,7 +207,7 @@ class E160_PF:
     if CONFIG_IN_HARDWARE_MODE(CONFIG_ROBOT_MODE):
       if sensorT > 0.1: #Left sensor
         sensor_vertical_offset = CONFIG_LEFT_VERTICAL_OFFSET
-      elif sensotT < - 0.1:
+      elif sensorT < - 0.1:
         sensor_vertical_offset = CONFIG_RIGHT_VERTICAL_OFFSET
 
 
@@ -264,6 +275,8 @@ class E160_PF:
       self.heading = heading
       self.weight = weight
       self.is_first_run = False
+      self.weight_memory = 20
+      self.recent_weights = [0] * self.weight_memory
 
     def __str__(self):
       return str(self.x) + " " + str(self.y) + " " + str(self.heading) + " " + str(self.weight)

@@ -24,6 +24,8 @@ INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
                       E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
                       E160_state(60.5, 12, CONFIG_HALF_TURN),]
 
+STD_PATH = [E160_state(36*CONFIG_IN_TO_M,0,0)]
+
 [s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in INDOOR_TEST_PATH_1]
 # print([str(s) for s in INDOOR_TEST_PATH_1])
 
@@ -105,7 +107,10 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        self.path = INDOOR_TEST_PATH_1
+        if(CONFIG_COURSE != INDOOR_COURSE):
+            self.path = INDOOR_TEST_PATH_1
+        else:
+            self.path = STD_PATH
         self.path_current_pos = 0
         self.is_path_tracked = False
         self.path_tracking_pause_duration = 0
