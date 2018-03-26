@@ -163,7 +163,7 @@ class E160_robot:
         
         # localize with particle filter
         self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
-        self.state_est = self.state_odo
+        # self.state_est = self.state_odo
 
         # to out put the true location for display purposes only. 
         self.state_draw = self.state_odo
@@ -468,7 +468,7 @@ class E160_robot:
         if not self.point_tracked:
 
             # 1. Calculate changes in x, y.
-            self.difference_state = self.state_odo.get_state_difference(self.state_des)
+            self.difference_state = self.state_est.get_state_difference(self.state_des)
             Dx = self.difference_state.x
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta

@@ -11,13 +11,14 @@ CONFIG_GAUSS_MULT = 0.1
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
 CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/4
+CONFIG_PF_NUM_PARTICLES = 400
 
 class E160_PF:
 
   def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = 100
+    self.numParticles = CONFIG_PF_NUM_PARTICLES
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -149,7 +150,7 @@ class E160_PF:
     error_left = min_dist_left - sensor_readings[1]
 
     error = ((error_right)**2
-              + (error_straight)**2
+              + (error_straight/3)**2
               + (error_left**2))
 
     prob = math.exp(-error/self.IR_sigma_m**2)
@@ -185,7 +186,8 @@ class E160_PF:
       Return:
         None'''
     arr = np.array([[p.x, p.y, math.cos(p.heading), math.sin(p.heading)] for p in self.particles])
-    means = np.mean(arr, axis=0)
+    weights = np.array([p.weight for p in self.particles])
+    means = np.average(arr, axis=0, weights=weights)
     heading = math.atan2(means[3], means[2])
 
     self.state.set_state(means[0], means[1], heading)

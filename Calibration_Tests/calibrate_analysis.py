@@ -33,7 +33,10 @@ print(mean_vals, std_devs)
 
 # weighted linear regression of log of y values
 coefs1 = np.polyfit(READING_DISTS_CM[2:10], mean_vals[2:10], 1, w=1/std_devs[2:10])
-coefs2 = np.polyfit(READING_DISTS_CM[9:], mean_vals[9:], 1, w=1/std_devs[9:])
+if sensorId == 0:
+  coefs2 = np.polyfit(READING_DISTS_CM[9:], mean_vals[9:], 1)
+else:
+  coefs2 = np.polyfit(READING_DISTS_CM[9:], mean_vals[9:], 1, w=1/std_devs[9:])
 print('fit coefficients 1 sensor: ',sensorId,' : ', coefs1)
 print('fit coefficients 2 sensor: ',sensorId,' : ', coefs2)
 

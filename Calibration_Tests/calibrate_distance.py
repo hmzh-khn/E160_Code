@@ -34,7 +34,7 @@ def runRobot(env, graphics=None, deltaT=CONFIG_DELTA_T):
   env.log_data()
 
   # maintain timing
-  time.sleep(deltaT)
+  time.sleep(0.1*deltaT)
 
   return 0
 
