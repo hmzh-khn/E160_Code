@@ -74,6 +74,8 @@ def CONFIG_FORWARD_DISTANCE_CALIBRATION(potential_measurement):
   return -31.546 * math.log(math.exp(-7.19)*potential_measurement)
   # old calibration with 10cm -32.05 * math.log(math.exp(-7.07)*range_measurements[0])
 
+# def CONFIG_FORWARD_DISTANCE_CALIBRATION(potential_measurement):
+  # return -31.546 * math.log(math.exp(-7.19)*potential_measurement)
 
 """
 Lab 1 configurations.
