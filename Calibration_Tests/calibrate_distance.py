@@ -76,7 +76,7 @@ if __name__ == '__main__':
   # data = np.vstack(tuple([x for _,x in readings.items()]))
   df = pd.DataFrame(readings.T, columns=[str(dist)+'cm' for dist in READING_DISTS_CM])
   # TO LOG, ADD TO_CSV FUNC
-  df.to_csv("/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/Log/RangeCalibrationSensor{}.csv".format(sensorId))
+  df.to_csv("/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/Log/RangeCalibrationSensor{}.csv".format(sensorId), index=False)
 
   ## plot everything
   fig = plt.figure()
@@ -88,7 +88,7 @@ if __name__ == '__main__':
   # plt.plot(READING_DISTS_CM[0]*np.ones(NUM_READINGS_PER_TEST), readings[20.0], label='exponential fit line')
   # plt.plot(READING_DISTS_CM[1]*np.ones(NUM_READINGS_PER_TEST), readings[30.0], label='exponential fit line')
   # plt.plot(READING_DISTS_CM[2]*np.ones(NUM_READINGS_PER_TEST), readings[40.0], label='exponential fit line')
-  plt.ylabel('sensor values in [-255, 255]')
+  plt.ylabel('sensor values in [0, 255]')
   plt.xlabel('distance (cm)')
   plt.legend()
   plt.show()

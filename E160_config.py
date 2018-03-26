@@ -69,13 +69,30 @@ CONFIG_MAX_POWER = 25
 CONFIG_MIN_POWER = 10
 
 
-#### SET FORWARD DISTANCE SENSOR CALIBRATION #####
-def CONFIG_FORWARD_DISTANCE_CALIBRATION(potential_measurement):
-  return -31.546 * math.log(math.exp(-7.19)*potential_measurement)
-  # old calibration with 10cm -32.05 * math.log(math.exp(-7.07)*range_measurements[0])
+#### SET DISTANCE SENSOR CALIBRATION #####
+CONFIG_TRANSITION_SLOPE = [1.0, 1.0, 1.0]
+CONFIG_TRANSITION_MIDPOINTS = [math.exp(5.55), math.exp(5.55), math.exp(5.50)]
+CONFIG_COEFS_0a = [-0.02300221, -0.02255046, -0.02529154]
+CONFIG_COEFS_0b = [ 7.18207424,  7.11262486,  7.20523324]
+CONFIG_COEFS_1a = [-0.00801471, -0.01002808, -0.01091964]
+CONFIG_COEFS_1b = [ 6.16403733,  6.28474471,  6.30193341]
 
-# def CONFIG_FORWARD_DISTANCE_CALIBRATION(potential_measurement):
-  # return -31.546 * math.log(math.exp(-7.19)*potential_measurement)
+def sigmoid(x, sensorNum):
+  i = sensorNum
+  return 1 / (1 + math.exp(-CONFIG_TRANSITION_SLOPE[i]*(x - CONFIG_TRANSITION_MIDPOINTS[i])))
+
+
+def CONFIG_DISTANCE_CALIBRATION(potential_measurement, sensorNum):
+  i = sensorNum
+
+  close_activation = sigmoid(potential_measurement, sensorNum)
+  close_val = (math.log(potential_measurement) - CONFIG_COEFS_0b[i]) / CONFIG_COEFS_0a[i]
+
+  far_activation = (1 - close_activation)
+  far_val = (math.log(potential_measurement) - CONFIG_COEFS_1b[i]) / CONFIG_COEFS_1a[i]
+
+  return far_activation * far_val + close_activation * close_val
+
 
 """
 Lab 1 configurations.

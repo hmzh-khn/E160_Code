@@ -143,7 +143,11 @@ class E160_robot:
         # get sensor measurements
         self.encoder_measurements, self.range_voltages = self.update_sensor_measurements(deltaT)
         if CONFIG_ROBOT_MODE == HARDWARE_MODE:
-            self.range_measurements = [CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1))/100 for v in self.range_voltages]
+            self.range_measurements = []
+            for i in range(len(self.range_voltages)):
+                v = self.range_voltages[i]
+                self.range_measurements.append(CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1),i)/100)
+            #self.range_measurements = [CONFIG_FORWARD_DISTANCE_CALIBRATION(max(v,1))/100 for v in self.range_voltages]
             self.range_measurements[0] = self.range_measurements[0] + CONFIG_FRONT_SENSOR_OFFSET_M
             self.range_measurements[1] = self.range_measurements[1] + CONFIG_LEFT_SENSOR_OFFSET_M 
             self.range_measurements[2] = self.range_measurements[2] + CONFIG_RIGHT_SENSOR_OFFSET_M 
