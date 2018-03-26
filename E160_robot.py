@@ -43,6 +43,9 @@ class E160_robot:
             self.state_draw.set_state(0,0,0) 
             self.state_odo = E160_state()
             self.state_odo.set_state(0,0,0)
+            self.state_ctrl = E160_state()
+            self.state_odo.set_state(0,0,0)
+
         else:
             x0, y0, t0 = (10.25-CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, (-9+CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, math.pi/2
             self.state_est = E160_state()
@@ -52,6 +55,8 @@ class E160_robot:
             self.state_draw = E160_state()
             self.state_draw.set_state(x0, y0, t0) 
             self.state_odo = E160_state()
+            self.state_odo.set_state(x0, y0, t0)
+            self.state_ctrl = E160_state()
             self.state_odo.set_state(x0, y0, t0)
 
         self.R = 0
@@ -164,6 +169,7 @@ class E160_robot:
         # localize with particle filter
         self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
         # self.state_est = self.state_odo
+        self.state_ctrl = self.state_odo
 
         # to out put the true location for display purposes only. 
         self.state_draw = self.state_odo
@@ -468,7 +474,7 @@ class E160_robot:
         if not self.point_tracked:
 
             # 1. Calculate changes in x, y.
-            self.difference_state = self.state_est.get_state_difference(self.state_des)
+            self.difference_state = self.state_ctrl.get_state_difference(self.state_des)
             Dx = self.difference_state.x
             Dy = self.difference_state.y
             Dtheta = self.difference_state.theta
