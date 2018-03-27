@@ -6,12 +6,15 @@ from E160_config import *
 from E160_state import*
 from scipy.stats import norm
 
-
-CONFIG_GAUSS_MULT = 0.1
+CONFIG_RANDOM = False
+if CONFIG_RANDOM:
+  CONFIG_GAUSS_MULT = 0.1
+else:
+  CONFIG_GAUSS_MULT = 0.2
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
-CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/4
-CONFIG_PF_NUM_PARTICLES = 400
+CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/2
+CONFIG_PF_NUM_PARTICLES = 100
 
 class E160_PF:
 
@@ -28,7 +31,10 @@ class E160_PF:
     self.FAR_READING = 1.5
     
     # PF parameters
-    self.IR_sigma_m = 0.3 # Range finder s.d
+    if CONFIG_IN_HARDWARE_MODE:
+      self.IR_sigma_m = 0.2 # Range finder s.d
+    else:
+      self.IR_sigma_m = 0.3 # Range finder s.d
     self.odom_xy_sigma = 1.25 # odometry delta_s s.d
     self.odom_heading_sigma = 0.75  # odometry heading s.d
     # self.particle_weight_sum = 0
@@ -59,8 +65,10 @@ class E160_PF:
         None'''
     self.particles = self.numParticles*[0]
     for i in range(0, self.numParticles):
-      # self.SetRandomStartPos(i)
-      self.SetKnownStartPos(i)
+      if(CONFIG_RANDOM):
+        self.SetRandomStartPos(i)
+      else: 
+        self.SetKnownStartPos(i)
       self.particles[i].is_first_run = True
 
   def SetRandomStartPos(self, i):
@@ -150,7 +158,7 @@ class E160_PF:
     error_left = min_dist_left - sensor_readings[1]
 
     error = ((error_right)**2
-              + (error_straight/3)**2
+              + (error_straight)**2
               + (error_left**2))
 
     prob = math.exp(-error/self.IR_sigma_m**2)
@@ -173,7 +181,13 @@ class E160_PF:
     old_particles = copy.deepcopy(self.particles)
 
     for i in range(self.numParticles):
-      if self.particles[i].weight <= CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles:
+      no_good_measurements = True
+      for old_weight in self.particles[i].recent_weights[-5:]: 
+          if old_weight > 0.9 : no_good_measurements=False  
+      if self.particles[i].weight <= CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles and no_good_measurements:
+        random_threshold = 0.05
+        if CONFIG_RANDOM:
+          random_threshold = 0.2
         if random.random() < 0.05:
           self.SetRandomStartPos(i)
         else:
