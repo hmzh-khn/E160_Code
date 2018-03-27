@@ -16,6 +16,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+if CONFIG_ROBOT_MODE == SIMULATION_MODE:
+  raise Exception("Robot in simulation mode. Please switch to hardware mode.")
+
 NUM_READINGS_PER_TEST = 100
 READING_DISTS_CM = np.array([10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100, 120, 140])
 # READING_DISTS_CM = np.array([20, 30, 40])
