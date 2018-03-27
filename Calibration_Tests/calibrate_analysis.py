@@ -19,16 +19,14 @@ readings = pd.read_csv("LabData/RangeCalibrationSensor{}.csv".format(sensorId), 
 
 READING_DISTS_CM = np.array([10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100, 120, 140])
 if sensorId == 0:
-  readings = readings.drop(["120cm"], axis=1)
-  READING_DISTS_CM = np.array([10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100, 140])
+  readings = pd.read_csv("LabData/RangeCalibrationSensor{}.csv".format(sensorId))
+  # readings = readings.drop(["120cm"], axis=1)
+  # READING_DISTS_CM = np.array([10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100, 140])
 
 mean_vals = np.zeros(len(READING_DISTS_CM))
 std_devs  = np.zeros(len(READING_DISTS_CM))
 mean_vals = np.mean(np.log(readings), axis=0)
 std_devs  = np.std(np.log(readings), axis=0)
-# for i in range(len(READING_DISTS_CM)):
-#   mean_vals[i] = np.mean(np.log(readings[:,i]))
-#   std_devs[i]  = np.std(np.log(readings[:,i]))
 print(mean_vals, std_devs)
 
 # weighted linear regression of log of y values
