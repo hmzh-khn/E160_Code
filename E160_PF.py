@@ -6,7 +6,7 @@ from E160_config import *
 from E160_state import*
 from scipy.stats import norm
 
-CONFIG_RANDOM = False
+CONFIG_RANDOM = True
 if CONFIG_RANDOM:
   CONFIG_GAUSS_MULT = 0.1
 else:
@@ -14,7 +14,7 @@ else:
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
 CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/2
-CONFIG_PF_NUM_PARTICLES = 100
+CONFIG_PF_NUM_PARTICLES = 400
 
 class E160_PF:
 
