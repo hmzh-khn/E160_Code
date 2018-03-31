@@ -367,7 +367,7 @@ class E160_robot:
     def make_headers(self):
         f = open(self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        names = ['desired_tick_rate_L', 'desired_tick_rate_R', 'state_est_x', 'state_est_y', 'state_est_theta', 'deltaleftEnc', 'deltarightEnc']
+        names = ['desired_tick_rate_L', 'desired_tick_rate_R', 'state_odo_x', 'state_odo_y', 'state_odo_theta', 'deltaleftEnc', 'deltarightEnc', 'pf_state_x', 'pf_state_y', 'pf_state_theta']
         f.write(' '.join(names) + '\n')
         f.close()
 
@@ -377,7 +377,7 @@ class E160_robot:
 
         # log distance from wall to 2 decimal places
         # alpha = round(self.R_motor_scaling_factor, 4)
-        data = [str(self.L), str(self.R), str(self.state_odo), str(self.delta_left), str(self.delta_right)]
+        data = [str(self.L), str(self.R), str(self.state_odo), str(self.delta_left), str(self.delta_right), str(self.state_est)]
         
         f.write(' '.join(data) + '\n')
         f.close()
