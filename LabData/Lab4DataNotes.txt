@@ -1,0 +1,9 @@
+Known Start Hardware (try 1), ended x = 17.5 from end, y is 13.5 from top
+Should be x,y = 64.13, 15.6
+y is good, off in x direction (should be closer to 1.01m)?
+
+Known start Hardware (try 2), ended x = LEN - 16.5 in, y = 15.25in
+Should be x,y = 103.7 cm, 11.3cm
+
+Random start hardware x = LEN - 19 in, y = 12.5 in
+Should be x,y = 97.32cm, 18.25 cm

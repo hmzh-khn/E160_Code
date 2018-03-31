@@ -6,8 +6,8 @@ from E160_config import *
 from E160_state import*
 from scipy.stats import norm
 
-CONFIG_RANDOM = True
-if CONFIG_RANDOM:
+CONFIG_RANDOM_START = True
+if CONFIG_RANDOM_START:
   CONFIG_GAUSS_MULT = 0.1
 else:
   CONFIG_GAUSS_MULT = 0.2
@@ -65,7 +65,7 @@ class E160_PF:
         None'''
     self.particles = self.numParticles*[0]
     for i in range(0, self.numParticles):
-      if(CONFIG_RANDOM):
+      if(CONFIG_RANDOM_START):
         self.SetRandomStartPos(i)
       else: 
         self.SetKnownStartPos(i)
@@ -187,7 +187,7 @@ class E160_PF:
           if old_weight > 0.9 : no_good_measurements=False  
       if self.particles[i].weight <= CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles and no_good_measurements:
         random_threshold = 0.05
-        if CONFIG_RANDOM:
+        if CONFIG_RANDOM_START:
           random_threshold = 0.2
         if random.random() < 0.05:
           self.SetRandomStartPos(i)

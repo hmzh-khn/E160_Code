@@ -103,7 +103,7 @@ class E160_robot:
             # self.speedy = 0.1
             self.K_rho = 1.0 #* self.speedy
             self.K_alpha = 1.8 #* self.speedy
-            self.K_beta =  -1.0 #* self.speedy
+            self.K_beta =  -0.3 #* self.speedy
 
         self.max_speed_m_per_sec = 0.05
         self.point_tracked = True
