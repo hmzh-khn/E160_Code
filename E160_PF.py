@@ -115,6 +115,7 @@ class E160_PF:
         if self.particles[i].weight < 0.01 and no_good_measurements:
           if random.random() < 0.1:
             self.SetRandomStartPos(i)
+            self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
       total_weight = total_weight + self.particles[i].weight
 
     for i in range(self.numParticles):
