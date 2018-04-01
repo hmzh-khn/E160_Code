@@ -6,7 +6,7 @@ from E160_config import *
 from E160_state import*
 from scipy.stats import norm
 
-CONFIG_RANDOM_START = True
+CONFIG_RANDOM_START = False
 if CONFIG_RANDOM_START:
   CONFIG_GAUSS_MULT = 0.1
 else:

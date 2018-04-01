@@ -13,13 +13,13 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-sensorId = 0
+sensorId = 2
 
-readings = pd.read_csv("LabData/RangeCalibrationSensor{}.csv".format(sensorId), index_col=0)
+readings = pd.read_csv("LabData/SensorCalibrations/RangeCalibrationSensor{}.csv".format(sensorId), index_col=0)
 
 READING_DISTS_CM = np.array([10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100, 120, 140])
 if sensorId == 0:
-  readings = pd.read_csv("LabData/RangeCalibrationSensor{}.csv".format(sensorId))
+  readings = pd.read_csv("LabData/SensorCalibrations/RangeCalibrationSensor{}.csv".format(sensorId))
   # readings = readings.drop(["120cm"], axis=1)
   # READING_DISTS_CM = np.array([10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100, 140])
 
