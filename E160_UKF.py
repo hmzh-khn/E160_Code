@@ -14,14 +14,18 @@ else:
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
 CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/2
-CONFIG_PF_NUM_PARTICLES = 400
 
-class E160_PF:
+CONFIG_NUM_STATE_VARS = 3
 
-  def __init__(self, environment, robotWidth, wheel_radius, encoder_resolution):
+class E160_UKF:
+
+  def __init__(self, environment, initial_state, initial_variance, robotWidth, wheel_radius, encoder_resolution):
     self.particles = []
     self.environment = environment
-    self.numParticles = CONFIG_PF_NUM_PARTICLES
+    self.numParticles = 2*CONFIG_NUM_STATE_VARS + 1
+
+    self.variance = initial_variance
+    self.GenerateParticles()
     
     # maybe should just pass in a robot class?
     self.robotWidth = robotWidth
@@ -45,45 +49,51 @@ class E160_PF:
 
     # initialize the current state
     self.state = E160_state()
-    self.state.set_state(0,0,0)
+    self.state.set_state(initial_state)
 
     # TODO: change this later
     self.map_maxX = CONFIG_MAP_MAX_X_M
     self.map_minX = CONFIG_MAP_MIN_X_M
     self.map_maxY = CONFIG_MAP_MAX_Y_M
     self.map_minY = CONFIG_MAP_MIN_Y_M
-    self.known_start = self.Particle(0.0,0.0,0.0,1.0/self.numParticles)
 
     self.InitializeParticles()
     self.last_encoder_measurements =[0,0]
 
-  def InitializeParticles(self):
+  def GenerateParticles(self):
     ''' Populate self.particles with random Particle 
       Args:
         None
       Return:
         None'''
+
+    self.sigma_offsets = np.zeros(CONFIG_NUM_STATE_VARS, self.numParticles)
+    for i in range(len(self.variance)):
+      stdev = np.sqrt(self.variance[i][i])
+
+      # sets the negative offset for each state variable
+      self.sigma_offsets[i][i] = -stdev
+      # sets the positive offset for each state variable
+      self.sigma_offsets[i][i + CONFIG_NUM_STATE_VARS + 1] = stdev
+
+
     self.particles = self.numParticles*[0]
+    # global state
+    x, y, theta = self.state.x, self.state.y, self.state.theta
+
     for i in range(0, self.numParticles):
-      if(CONFIG_RANDOM_START):
-        self.SetRandomStartPos(i)
-      else: 
-        self.SetKnownStartPos(i)
-      self.particles[i].is_first_run = True
+        self.particles[i] = self.Particle(x + self.sigma_offsets[0][i] * np.cos(theta) - self.sigma_offsets[1][i] * np.sin(theta),
+                                          y + self.sigma_offsets[0][i] * np.sin(theta) + self.sigma_offsets[1][i] * np.cos(theta),
+                                          self.normalize_angle(theta + self.sigma_offsets[2][i]))
 
-  def SetRandomStartPos(self, i):
-    x_naught = random.uniform(self.map_minX, self.map_maxX)
-    y_naught = random.uniform(self.map_minY, self.map_maxY)
-    self.particles[i] = self.Particle(x_naught, y_naught, random.uniform(-math.pi,math.pi) ,1.0/self.numParticles)
+  # def SetKnownStartPos(self, i):
+    # self.particles[i] = self.Particle((10.25-CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, (-9+CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, math.pi/2,1.0/self.numParticles)
 
-  def SetKnownStartPos(self, i):
-    self.particles[i] = self.Particle((10.25-CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, (-9+CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, math.pi/2,1.0/self.numParticles)
-
-  def copyPasteParticle(self, i, copied_particle):
-    self.particles[i] = self.Particle(copied_particle.x,
-                                      copied_particle.y,
-                                      copied_particle.heading,
-                                      copied_particle.weight)
+  # def copyPasteParticle(self, i, copied_particle):
+    # self.particles[i] = self.Particle(copied_particle.x,
+                                      # copied_particle.y,
+                                      # copied_particle.heading,
+                                      # copied_particle.weight)
             
   def LocalizeEstWithParticleFilter(self, 
                                     encoder_measurements, 
@@ -111,17 +121,20 @@ class E160_PF:
         self.particles[i].recent_weights.insert(0,self.particles[i].weight)
         self.particles[i].recent_weights.pop()
         for old_weight in self.particles[i].recent_weights: 
-          if old_weight > 0.9 : no_good_measurements=False  
-        if self.particles[i].weight < 0.01 and no_good_measurements:
-          if random.random() < 0.1:
-            self.SetRandomStartPos(i)
-            self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
+          if old_weight > 0.9:
+            no_good_measurements=False  
+        # if self.particles[i].weight < 0.01 and no_good_measurements:
+          # if random.random() < 0.1:
+            # self.SetRandomStartPos(i)
+            # self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
       total_weight = total_weight + self.particles[i].weight
 
     for i in range(self.numParticles):
       self.particles[i].weight = self.particles[i].weight / total_weight
 
-    self.Resample()
+    ### TODO: START HERE
+    # self.UpdateVariance()
+    self.GenerateParticles()
 
     return self.GetEstimatedPos()
 

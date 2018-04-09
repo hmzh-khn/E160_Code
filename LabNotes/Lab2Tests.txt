@@ -1,0 +1,96 @@
+Tests to run
+============
+
+1. Find alpha (coefficient to equalize motor speed)
+  a. Driving straight (error is dTheta)
+  b. Rotating (error is dS)
+
+1a. Camera Testing
+  a. Set up Apparatus
+  b. Write script with movements
+  c. Process data
+  d. Scripts to analyze data
+
+2. Testing straight driving
+  a. D = 0:5:0.5
+  b. P = -25, 25, -50, 50, -75, 75
+
+3. Testing rotation
+  a. theta = 30 deg increments
+  b. direction = +1, -1
+  b. P = -75, -50, -25, -10, 10, 25, 50, 75
+
+
+
+Lab 2 Todo List
+---------------
+Software:
+  1. Write code for backwards alpha-setting.
+  2. Move rampup to Arduino.
+  3. Design a PID controller.
+
+Tests:
+  1. Tick rate (alternative to alpha values)
+    a. Write up experimental procedure.
+      i. ***** Write software for procedure.
+    b. Identify right encoder tick rate (at various speeds).
+    c. Identify left encoder tick rate (at various speeds).
+
+  2. Identify alpha values (potentially valuable, maybe can skip?)
+    a. Decide speeds, rotations to test.
+    b. Run tests at desired speeds, trajectories
+
+  3. Track robot motion with camera.
+    a. Set up apparatus with webcam from lab, 80/20, tape
+    b. Write a list of trajectories to measure.
+      i. ***** Encode these trajectories within a script.
+    c. Identify how to use the software.
+    d. Process all the video data.
+    e. Analyze the data.
+      i. ***** Make graphs of all the trajectories.
+
+  4. Design PID controller
+    a. Identify PID controller coefficients.
+
+
+Robot Hygiene Todo List
+-----------------------
+2. Clean up wiring.
+5. [Less important] Reduce skywiring.
+6. Make Teensy board more stable.
+
+Lab 3 Todo List
+---------------
+-- 1. Machine metal strips for the side sensors.
+3. Wire side sensors, verify that they work.
+4. [For next lab] calibrate side sensors
+
+
+Todo Sunday night:
+
+
+
+Error List
+----------
+ERROR? WHEN TICK RATE IS 0 IN TRANSITION, MAY HAVE ERRORS!
+
+
+
+Next Steps:
+5. Write code to be able to hit enter to start alpha-tests
+  a. Expand alpha-test for backwards (both directions)
+6. Debug alpha-test script
+7. Write code to automate alpha test script (have pause button/distance check in case it hits something?)
+8. Run alpha tests
+
+-- 9. Design ramp-up curve for non-jerky acceleration.
+
+10. Design test apparatus for straight line testing.
+  a. Take one speed, do representative curve at all distance, for others, do 1-2
+  b. Focus on long-term behavior after first characterization
+11. Debug test apparatus for straight line testing.
+  a. Take one speed, do representative curve at all distance, for others, do 1-2
+  b. Focus on long-term behavior after first characterization
+
+12. Design test apparatus for rotation testing.
+13. Debug test apparatus for rotation testing.

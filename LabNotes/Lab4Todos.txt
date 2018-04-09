@@ -1,0 +1,31 @@
+Goals:
+------
+1. Show a working particle filter in simulation.
+2. Show a working particle filter on robot.
+
+Lab 4 Todos:
+------------
+
+Hardware
+========
+1. Calibrate distance sensors
+2. Recharacterize error in wheels (to use as normal dist. parameters)
+3. Update calibration for ticks -> centimeters
+  a. Use and implement new encoder resolution
+
+
+Software
+========
+1. Change resampling boundary
+2. Estimate uncertainty
+3. Momentum weighting (recent good measurement, kept around)
+
+
+Tests (test all with camera tracking)
+=====
+0. Hardware for camera?
+1. Known start, simulation
+2. Random start, simulation
+3. Known start, hardware
+4. Random start, hardware
+5. Test robot kidnap problem

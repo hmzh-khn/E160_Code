@@ -1,0 +1,29 @@
+Goals:
+------
+1. Show a working point tracker (in person, videos not allowed).
+2. 
+
+Lab 3 Todos:
+------------
+1. Complete characterization of tick rates at various speeds.
+2. Implement python tick rate conversion from centimeters/s to ticks/s
+3. Write point tracking code.
+
+
+Tests
+-----
+1. Go straight forward (0,0,0) --> (-1,0,0)
+2. Go straight backward (0,0,0) --> (1,0,0)
+3a. Rotate (0,0,0) --> (0,0,1rad)
+[no] 3b. Rotate (0,0,0) --> (0,0,pi)
+3c. Rotate (0,0,0) --> (0,0,pi/2)
+3d. Rotate (0,0,0) --> (0,0,-pi/4)
+4a. Perpendicular (0,0,0) -> (0,1,0)
+4b. Perpendicular (0,0,0) -> (0,-1,0)
+5. Diagonal (0,0,0) -> (1,1,0)
+6. Close Spot (0,0,0) -> (0.1,0.1,0)
+
+
+Problems:
+1. Alpha causes an initial overshoot when reaching point
+2. Not enough S-curve?

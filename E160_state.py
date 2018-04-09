@@ -10,10 +10,16 @@ class E160_state:
         self.set_state(x, y, theta)
         self.theta_cumulative = 0
         
-    def set_state(self,x,y,theta):
-        self.x = x
-        self.y = y
-        self.theta = theta
+    def set_state(self,x,y=None,theta=None):
+        if not y:
+            # is another E160_state
+            self.y = x.y
+            self.theta = x.theta
+            self.x = x.x
+        else:
+            self.x = x
+            self.y = y
+            self.theta = theta
 
     def add_theta(self, delta_theta):
     	self.theta_cumulative += delta_theta
