@@ -88,7 +88,7 @@ class E160_UKF:
         self.particles[i] = self.UKF_Particle(x + self.sigma_offsets[0][i] * np.cos(theta) - self.sigma_offsets[1][i] * np.sin(theta),
                                           y + self.sigma_offsets[0][i] * np.sin(theta) + self.sigma_offsets[1][i] * np.cos(theta),
                                           self.normalize_angle(theta + self.sigma_offsets[2][i]),
-                                          1/self.numParticles)
+                                          1.0/self.numParticles)
             
   def LocalizeEstWithParticleFilter(self, 
                                     encoder_measurements, 
@@ -111,8 +111,13 @@ class E160_UKF:
     for i in range(self.numParticles):
       if encoder_measurements != last_encoder_measurements:
         rands = [random.gauss(1,CONFIG_SENSOR_NOISE),random.gauss(1,CONFIG_SENSOR_NOISE)]
+
+        self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i]) 
         self.Propagate(encoder_measurements, last_encoder_measurements, i, rands)
-        self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
+
+        #TODO NOT JUST RANDOMLY PROPOGATE AFTER CALCULATING WEIGHT
+        # The issue: Min dist straight is one cycle ahead of the sensor readings...
+
       total_weight += self.particles[i].weight
 
     print('weights', [p.weight for p in self.particles])
@@ -165,7 +170,7 @@ class E160_UKF:
               + (error_straight)**2
               + (error_left**2))
 
-    print('error', error_left, error_straight, error_right)
+    print('error', error_left, error_straight, error_right, min_dist_straight, sensor_readings[0])
 
     prob = math.exp(-error/self.IR_sigma_m**2)
     #print(prob)
@@ -203,8 +208,8 @@ class E160_UKF:
 
     self.state.set_state(means[0], means[1], heading)
 
-    print('state actual', self.environment.robots[0].state_odo)
-    print('state ukf', self.state)
+    print('state actual', str(self.environment.robots[0].state_odo))
+    print('state ukf', str(self.state))
 
     return self.state
 
