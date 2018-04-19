@@ -158,8 +158,8 @@ class E160_graphics:
         self.typing_k_beta.insert(0,self.robot.K_beta)  
 
         # initilize particle representation
-        self.particles_dot = [self.canvas.create_oval(0,0,0,0, fill ='black') for _ in range(self.environment.robots[0].PF.numParticles)]
-        self.particles_line = [self.canvas.create_line(0,0,math.cos(x.heading),math.sin(x.heading), fill='black') for x in self.environment.robots[0].PF.particles]
+        self.particles_dot = [self.canvas.create_oval(0,0,0,0, fill ='black') for _ in range(self.environment.robots[0].filter.numParticles)]
+        self.particles_line = [self.canvas.create_line(0,0,math.cos(x.heading),math.sin(x.heading), fill='black') for x in self.environment.robots[0].filter.particles]
 
         # draw static environment
         for w in self.environment.walls:
@@ -386,9 +386,9 @@ class E160_graphics:
             return True
 
     def draw_particles(self, robot):
-        for i in range(robot.PF.numParticles):
-            pf_point = [robot.PF.particles[i].x, robot.PF.particles[i].y]
-            pf_theta = robot.PF.particles[i].heading
+        for i in range(robot.filter.numParticles):
+            pf_point = [robot.filter.particles[i].x, robot.filter.particles[i].y]
+            pf_theta = robot.filter.particles[i].heading
             point = self.scale_points(pf_point, self.scale)
             self.canvas.delete(self.particles_dot[i]) 
             self.particles_dot[i] = self.canvas.create_oval(point[0] - 2, point[1] - 2, point[0] + 2, point[1] + 2, fill='red')

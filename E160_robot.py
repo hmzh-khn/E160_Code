@@ -2,10 +2,16 @@
 from E160_config import *
 from E160_state import *
 from E160_PF import *
+from E160_UKF import *
 import math
 import datetime
 import time
 import random
+
+CONFIG_PARTICLE_FILTER = "PF"
+CONFIG_UNSCENTED_KALMAN_FILTER = "UKF"
+
+CONFIG_FILTER = CONFIG_UNSCENTED_KALMAN_FILTER
 
 TEST_PATH_1 = [E160_state(0,0,0), 
                E160_state(0.25,0,0), 
@@ -58,6 +64,9 @@ class E160_robot:
             self.state_odo.set_state(x0, y0, t0)
             self.state_ctrl = E160_state()
             self.state_odo.set_state(x0, y0, t0)
+
+        self.state_ukf = E160_state()
+        self.state_ukf.set_state(x0, y0, t0)
 
         self.R = 0
         self.L = 0
@@ -135,6 +144,26 @@ class E160_robot:
                           self.wheel_radius, 
                           2 * math.pi * self.wheel_radius * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
 
+        # Final Project Unscented Kalman Filter
+        INIT_TRANSLATION_VARIANCE = 0.01
+        INIT_ANGLE_VARIANCE = 0.01
+        self.var_ukf = np.zeros((3,3))
+        self.var_ukf = np.zeros((3,3))
+        self.var_ukf[0][0] = INIT_TRANSLATION_VARIANCE
+        self.var_ukf[1][1] = INIT_TRANSLATION_VARIANCE
+        self.var_ukf[2][2] = INIT_ANGLE_VARIANCE
+        self.UKF = E160_UKF(environment,
+                            self.state_ukf,
+                            self.var_ukf, 
+                            self.width, 
+                            self.wheel_radius, 
+                            2 * math.pi * self.wheel_radius * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
+
+        if CONFIG_FILTER == CONFIG_PARTICLE_FILTER:
+            self.filter = self.PF
+        elif CONFIG_FILTER == CONFIG_UNSCENTED_KALMAN_FILTER:
+            self.filter = self.UKF
+
     def change_headers(self):
         self.make_headers()
 
@@ -167,7 +196,7 @@ class E160_robot:
         self.state_odo = self.localize(self.state_odo, self.encoder_measurements, self.range_measurements)
         
         # localize with particle filter
-        self.state_est = self.PF.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
+        self.state_est = self.filter.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
         # self.state_est = self.state_odo
         self.state_ctrl = self.state_odo
         # self.state_est
@@ -203,9 +232,10 @@ class E160_robot:
         # obtain sensor measurements
         elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
-            sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0])
-            sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1])
-            sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2])
+            added_sensor_noise = [random.gauss(1,0.2),random.gauss(1,0.2),random.gauss(1,0.2)]
+            sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0]) * added_sensor_noise[0]
+            sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1]) * added_sensor_noise[1]
+            sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2]) * added_sensor_noise[2]
             range_measurements = [sensor2, sensor3, sensor1]
         
         return encoder_measurements, range_measurements
@@ -252,6 +282,9 @@ class E160_robot:
 
             elif CONFIG_LAB_NUMBER == 5:
                 pass
+
+            elif CONFIG_LAB_NUMBER == 6:
+                R, L = self.lab4_controller(range_measurements)
 
             else:
                 print('Inappropriate lab number specified. Please enter a number from 1-5.')

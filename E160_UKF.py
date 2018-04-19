@@ -24,6 +24,7 @@ class E160_UKF:
     self.environment = environment
     self.numParticles = 2*CONFIG_NUM_STATE_VARS + 1
 
+    self.state = initial_state
     self.variance = initial_variance
     self.GenerateParticles()
     
@@ -57,7 +58,7 @@ class E160_UKF:
     self.map_maxY = CONFIG_MAP_MAX_Y_M
     self.map_minY = CONFIG_MAP_MIN_Y_M
 
-    self.InitializeParticles()
+    # self.InitializeParticles()
     self.last_encoder_measurements =[0,0]
 
   def GenerateParticles(self):
@@ -67,7 +68,7 @@ class E160_UKF:
       Return:
         None'''
 
-    self.sigma_offsets = np.zeros(CONFIG_NUM_STATE_VARS, self.numParticles)
+    self.sigma_offsets = np.zeros((CONFIG_NUM_STATE_VARS, self.numParticles))
     for i in range(len(self.variance)):
       stdev = np.sqrt(self.variance[i][i])
 
@@ -82,10 +83,10 @@ class E160_UKF:
     x, y, theta = self.state.x, self.state.y, self.state.theta
 
     for i in range(0, self.numParticles):
-        self.particles[i] = self.Particle(x + self.sigma_offsets[0][i] * np.cos(theta) - self.sigma_offsets[1][i] * np.sin(theta),
+        self.particles[i] = self.UKF_Particle(x + self.sigma_offsets[0][i] * np.cos(theta) - self.sigma_offsets[1][i] * np.sin(theta),
                                           y + self.sigma_offsets[0][i] * np.sin(theta) + self.sigma_offsets[1][i] * np.cos(theta),
-                                          self.normalize_angle(theta + self.sigma_offsets[2][i]))
-
+                                          self.normalize_angle(theta + self.sigma_offsets[2][i]),
+                                          1/self.numParticles)
   # def SetKnownStartPos(self, i):
     # self.particles[i] = self.Particle((10.25-CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, (-9+CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, math.pi/2,1.0/self.numParticles)
 
@@ -109,24 +110,19 @@ class E160_UKF:
 
     # convert sensor readings to distances (with max of 1.5m)
     sensor_readings = [min(reading, self.FAR_READING) for reading in sensor_readings]
+    self.GenerateParticles()
 
-
-    # randomly propagate the movement
+    # propagate the particles with the model
     total_weight = 0
     for i in range(self.numParticles):
       if encoder_measurements != last_encoder_measurements:
-        self.Propagate(encoder_measurements, last_encoder_measurements, i)
+        rands = [random.gauss(1,0.2),random.gauss(1,0.2)]
+        self.Propagate(encoder_measurements, last_encoder_measurements, i, rands)
         self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
-        no_good_measurements = True
-        self.particles[i].recent_weights.insert(0,self.particles[i].weight)
-        self.particles[i].recent_weights.pop()
-        for old_weight in self.particles[i].recent_weights: 
-          if old_weight > 0.9:
-            no_good_measurements=False  
-        # if self.particles[i].weight < 0.01 and no_good_measurements:
-          # if random.random() < 0.1:
-            # self.SetRandomStartPos(i)
-            # self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
+      total_weight += self.particles[i].weight
+
+    for i in range(self.numParticles):
+      self.particles[i].weight = self.particles[i].weight / total_weight
       total_weight = total_weight + self.particles[i].weight
 
     for i in range(self.numParticles):
@@ -134,11 +130,11 @@ class E160_UKF:
 
     ### TODO: START HERE
     # self.UpdateVariance()
-    self.GenerateParticles()
+    
 
     return self.GetEstimatedPos()
 
-  def Propagate(self, encoder_measurements, last_encoder_measurements, i):
+  def Propagate(self, encoder_measurements, last_encoder_measurements, i, rands):
     '''Propagate all the particles from the last state with odometry readings
       Args:
         delta_s (float): distance traveled based on odometry
@@ -147,7 +143,7 @@ class E160_UKF:
         nothing'''
 
     delta_s, delta_heading = self.particles[i].update_odometry(encoder_measurements, 
-                                                               last_encoder_measurements)
+                                                               last_encoder_measurements, rands)
     self.particles[i].update_state(delta_s, delta_heading)
         
   def CalculateWeight(self, sensor_readings, walls, particle):
@@ -182,31 +178,6 @@ class E160_UKF:
     # make weights this nonzero
     return prob
 
-  def Resample(self):
-    '''Resample the particles systematically
-      Args:
-        None
-      Return:
-        None'''
-    weights = np.array([p.weight for p in self.particles])
-    particles = np.arange(self.numParticles)
-    particle_ids = np.random.choice(particles, size=self.numParticles, p=weights, replace=True)
-    
-    old_particles = copy.deepcopy(self.particles)
-
-    for i in range(self.numParticles):
-      no_good_measurements = True
-      for old_weight in self.particles[i].recent_weights[-5:]: 
-          if old_weight > 0.9 : no_good_measurements=False  
-      if self.particles[i].weight <= CONFIG_DELETE_PARTICLE_THRESHOLD / self.numParticles and no_good_measurements:
-        random_threshold = 0.05
-        if CONFIG_RANDOM_START:
-          random_threshold = 0.2
-        if random.random() < 0.05:
-          self.SetRandomStartPos(i)
-        else:
-          self.copyPasteParticle(i, old_particles[particle_ids[i]])
-
   def GetEstimatedPos(self):
     ''' Calculate the mean of the particles and return it 
       Args:
@@ -215,7 +186,23 @@ class E160_UKF:
         None'''
     arr = np.array([[p.x, p.y, math.cos(p.heading), math.sin(p.heading)] for p in self.particles])
     weights = np.array([p.weight for p in self.particles])
+
+     # identify new state
     means = np.average(arr, axis=0, weights=weights)
+
+    # Fast and numerically precise:
+    weighted_variance = np.average((arr-means)**2, weights=weights, axis=0)
+    print(weighted_variance)
+    weighted_std = np.sqrt(weighted_variance)
+    self.variance[0][0] = weighted_variance[0]
+    self.variance[1][1] = weighted_variance[1]
+    cos_variance = weighted_variance[2]*1/(1+(means[3]/means[2])**2)* \
+                      means[3]*1/(means[2]**2)
+    sin_variance = weighted_variance[3]*1/(1+(means[3]/means[2])**2)* \
+                      1/means[2]
+    theta_variance = math.sqrt(cos_variance**2 + sin_variance**2)
+    self.variance[2][2] = theta_variance
+
     heading = math.atan2(means[3], means[2])
 
     self.state.set_state(means[0], means[1], heading)
@@ -239,7 +226,7 @@ class E160_UKF:
       elif sensorT < - 0.1:
         sensor_vertical_offset = CONFIG_RIGHT_VERTICAL_OFFSET
 
-    temp_particle = self.Particle(0.0,0.0,particle.heading,1.0/self.numParticles)
+    temp_particle = self.UKF_Particle(0.0,0.0,particle.heading,1.0/self.numParticles)
     temp_particle.x = particle.x + math.cos(particle.heading) * sensor_vertical_offset
     temp_particle.y = particle.y + math.sin(particle.heading) * sensor_vertical_offset
 
@@ -296,7 +283,7 @@ class E160_UKF:
       ang = ang - 2 * math.pi
     return ang
 
-  class Particle:
+  class UKF_Particle:
     def __init__(self, x, y, heading, weight):
       self.x = x
       self.y = y
@@ -310,7 +297,7 @@ class E160_UKF:
       return str(self.x) + " " + str(self.y) + " " + str(self.heading) + " " + str(self.weight)
 
     # clean up this function
-    def update_odometry(self, encoder_measurements, last_encoder_measurements):
+    def update_odometry(self, encoder_measurements, last_encoder_measurements, rands):
 
       delta_s = 0
       delta_heading = 0
@@ -321,15 +308,10 @@ class E160_UKF:
       last_left_encoder_measurement = last_encoder_measurements[0]
       last_right_encoder_measurement = last_encoder_measurements[1]
 
-      rand1 = random.gauss(1.0, CONFIG_GAUSS_MULT)
-      rand2 = random.gauss(1.0, CONFIG_GAUSS_MULT)
-
       # print(left_encoder_measurement, last_left_encoder_measurement)#, right_encoder_measurement - last_right_encoder_measurement)
 
-      delta_left =  (float(left_encoder_measurement - last_left_encoder_measurement)
-                     * rand1)
-      delta_right = (float(right_encoder_measurement - last_right_encoder_measurement)
-                     * rand2)
+      delta_left =  float(left_encoder_measurement - last_left_encoder_measurement) * rands[0]
+      delta_right = float(right_encoder_measurement - last_right_encoder_measurement) * rands[1]
 
       # print('delta-dir', delta_left, delta_right)
 
