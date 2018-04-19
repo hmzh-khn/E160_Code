@@ -123,10 +123,6 @@ class E160_UKF:
 
     for i in range(self.numParticles):
       self.particles[i].weight = self.particles[i].weight / total_weight
-      total_weight = total_weight + self.particles[i].weight
-
-    for i in range(self.numParticles):
-      self.particles[i].weight = self.particles[i].weight / total_weight
 
     ### TODO: START HERE
     # self.UpdateVariance()
