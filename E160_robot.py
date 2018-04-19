@@ -11,6 +11,8 @@ import random
 CONFIG_PARTICLE_FILTER = "PF"
 CONFIG_UNSCENTED_KALMAN_FILTER = "UKF"
 
+CONFIG_SENSOR_NOISE = 0.0
+
 CONFIG_FILTER = CONFIG_UNSCENTED_KALMAN_FILTER
 
 TEST_PATH_1 = [E160_state(0,0,0), 
@@ -232,7 +234,7 @@ class E160_robot:
         # obtain sensor measurements
         elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
-            added_sensor_noise = [random.gauss(1,0.2),random.gauss(1,0.2),random.gauss(1,0.2)]
+            added_sensor_noise = [random.gauss(1,CONFIG_SENSOR_NOISE),random.gauss(1,CONFIG_SENSOR_NOISE),random.gauss(1,CONFIG_SENSOR_NOISE)]
             sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0]) * added_sensor_noise[0]
             sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1]) * added_sensor_noise[1]
             sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2]) * added_sensor_noise[2]

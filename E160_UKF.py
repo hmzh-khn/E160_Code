@@ -15,6 +15,8 @@ CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
 CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/2
 
+CONFIG_SENSOR_NOISE = 0.0
+
 CONFIG_NUM_STATE_VARS = 3
 
 class E160_UKF:
@@ -87,14 +89,6 @@ class E160_UKF:
                                           y + self.sigma_offsets[0][i] * np.sin(theta) + self.sigma_offsets[1][i] * np.cos(theta),
                                           self.normalize_angle(theta + self.sigma_offsets[2][i]),
                                           1/self.numParticles)
-  # def SetKnownStartPos(self, i):
-    # self.particles[i] = self.Particle((10.25-CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, (-9+CONFIG_M_TO_IN/2)*CONFIG_IN_TO_M, math.pi/2,1.0/self.numParticles)
-
-  # def copyPasteParticle(self, i, copied_particle):
-    # self.particles[i] = self.Particle(copied_particle.x,
-                                      # copied_particle.y,
-                                      # copied_particle.heading,
-                                      # copied_particle.weight)
             
   def LocalizeEstWithParticleFilter(self, 
                                     encoder_measurements, 
@@ -116,13 +110,17 @@ class E160_UKF:
     total_weight = 0
     for i in range(self.numParticles):
       if encoder_measurements != last_encoder_measurements:
-        rands = [random.gauss(1,0.2),random.gauss(1,0.2)]
+        rands = [random.gauss(1,CONFIG_SENSOR_NOISE),random.gauss(1,CONFIG_SENSOR_NOISE)]
         self.Propagate(encoder_measurements, last_encoder_measurements, i, rands)
         self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
       total_weight += self.particles[i].weight
 
+    print('weights', [p.weight for p in self.particles])
+
     for i in range(self.numParticles):
       self.particles[i].weight = self.particles[i].weight / total_weight
+
+    
 
     ### TODO: START HERE
     # self.UpdateVariance()
@@ -167,6 +165,8 @@ class E160_UKF:
               + (error_straight)**2
               + (error_left**2))
 
+    print('error', error_left, error_straight, error_right)
+
     prob = math.exp(-error/self.IR_sigma_m**2)
     #print(prob)
     #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, prob]])
@@ -188,7 +188,7 @@ class E160_UKF:
 
     # Fast and numerically precise:
     weighted_variance = np.average((arr-means)**2, weights=weights, axis=0)
-    print(weighted_variance)
+    print(np.sqrt(weighted_variance))
     weighted_std = np.sqrt(weighted_variance)
     self.variance[0][0] = weighted_variance[0]
     self.variance[1][1] = weighted_variance[1]
@@ -202,6 +202,10 @@ class E160_UKF:
     heading = math.atan2(means[3], means[2])
 
     self.state.set_state(means[0], means[1], heading)
+
+    print('state actual', self.environment.robots[0].state_odo)
+    print('state ukf', self.state)
+
     return self.state
 
   def FindMinWallDistance(self, particle, walls, sensorT):
