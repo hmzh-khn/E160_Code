@@ -28,6 +28,7 @@ class E160_UKF:
 
     self.state = initial_state
     self.variance = initial_variance
+    self.weighted_variance = initial_variance
     self.GenerateParticles()
     
     # maybe should just pass in a robot class?
@@ -50,15 +51,6 @@ class E160_UKF:
     self.sensor_orientation = [-math.pi/2, 0, math.pi/2] # orientations of the sensors on robot
     self.walls = self.environment.walls
 
-    # initialize the current state
-    self.state = E160_state()
-    self.state.set_state(initial_state)
-
-    # TODO: change this later
-    self.map_maxX = CONFIG_MAP_MAX_X_M
-    self.map_minX = CONFIG_MAP_MIN_X_M
-    self.map_maxY = CONFIG_MAP_MAX_Y_M
-    self.map_minY = CONFIG_MAP_MIN_Y_M
 
     # self.InitializeParticles()
     self.last_encoder_measurements =[0,0]
@@ -79,7 +71,7 @@ class E160_UKF:
       # sets the positive offset for each state variable
       self.sigma_offsets[i][i + CONFIG_NUM_STATE_VARS + 1] = stdev
 
-
+    print('GenerateParticles std: ', self.sigma_offsets)
     self.particles = self.numParticles*[0]
     # global state
     x, y, theta = self.state.x, self.state.y, self.state.theta
@@ -88,16 +80,18 @@ class E160_UKF:
         self.particles[i] = self.UKF_Particle(x + self.sigma_offsets[0][i] * np.cos(theta) - self.sigma_offsets[1][i] * np.sin(theta),
                                           y + self.sigma_offsets[0][i] * np.sin(theta) + self.sigma_offsets[1][i] * np.cos(theta),
                                           self.normalize_angle(theta + self.sigma_offsets[2][i]),
-                                          1/self.numParticles)
+                                          1.0/self.numParticles)
+        p = self.particles[i]
+        print([p.x, p.y, p.heading])
             
-  def LocalizeEstWithParticleFilter(self, 
-                                    encoder_measurements, 
-                                    last_encoder_measurements, 
-                                    sensor_readings):
+  def LocalizeEst(self, 
+                  encoder_measurements, 
+                  last_encoder_measurements, 
+                  sensor_readings):
     ''' Localize the robot with particle filters. Call everything
       Args: 
         delta_s (float): change in distance as calculated by odometry
-        delta_heading (float): change in heading as calcualted by odometry
+        delta_heading (float): change in heading as calculated by odometry
         sensor_readings([float, float, float]): sensor readings from range fingers
       Return:
         None'''
@@ -110,9 +104,18 @@ class E160_UKF:
     total_weight = 0
     for i in range(self.numParticles):
       if encoder_measurements != last_encoder_measurements:
+        p = self.particles[i]
+        print([p.x, p.y, p.heading])
         rands = [random.gauss(1,CONFIG_SENSOR_NOISE),random.gauss(1,CONFIG_SENSOR_NOISE)]
+
         self.Propagate(encoder_measurements, last_encoder_measurements, i, rands)
+
+        print('pp',[p.x, p.y, p.heading])
         self.particles[i].weight = self.CalculateWeight(sensor_readings, self.walls, self.particles[i])
+
+        #TODO NOT JUST RANDOMLY PROPOGATE AFTER CALCULATING WEIGHT
+        # The issue: Min dist straight is one cycle ahead of the sensor readings...
+
       total_weight += self.particles[i].weight
 
     print('weights', [p.weight for p in self.particles])
@@ -125,8 +128,9 @@ class E160_UKF:
     ### TODO: START HERE
     # self.UpdateVariance()
     
-
-    return self.GetEstimatedPos()
+    if encoder_measurements != last_encoder_measurements:
+      return self.GetEstimatedPos()
+    return self.state
 
   def Propagate(self, encoder_measurements, last_encoder_measurements, i, rands):
     '''Propagate all the particles from the last state with odometry readings
@@ -136,8 +140,9 @@ class E160_UKF:
       return:
         nothing'''
 
-    delta_s, delta_heading = self.particles[i].update_odometry(encoder_measurements, 
-                                                               last_encoder_measurements, rands)
+    delta_s, delta_heading = self.particles[i].update_odometry(encoder_measurements,
+                                                               last_encoder_measurements,
+                                                               rands)
     self.particles[i].update_state(delta_s, delta_heading)
         
   def CalculateWeight(self, sensor_readings, walls, particle):
@@ -164,10 +169,9 @@ class E160_UKF:
     error = ((error_right)**2
               + (error_straight)**2
               + (error_left**2))
+    print('error', error_left, error_straight, error_right, min_dist_straight, sensor_readings[0])
 
-    print('error', error_left, error_straight, error_right)
-
-    prob = math.exp(-error/self.IR_sigma_m**2)
+    prob = math.exp(-error/self.IR_sigma_m ** 2)
     #print(prob)
     #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, prob]])
 
@@ -181,32 +185,75 @@ class E160_UKF:
       Return:
         None'''
     arr = np.array([[p.x, p.y, math.cos(p.heading), math.sin(p.heading)] for p in self.particles])
-    weights = np.array([p.weight for p in self.particles])
+    sensor_weights = np.array([p.weight for p in self.particles])
 
      # identify new state
-    means = np.average(arr, axis=0, weights=weights)
+    means = np.average(arr, axis=0, weights=sensor_weights)
+    heading = math.atan2(means[3], means[2])
 
-    # Fast and numerically precise:
-    weighted_variance = np.average((arr-means)**2, weights=weights, axis=0)
-    print(np.sqrt(weighted_variance))
-    weighted_std = np.sqrt(weighted_variance)
-    self.variance[0][0] = weighted_variance[0]
-    self.variance[1][1] = weighted_variance[1]
-    cos_variance = weighted_variance[2]*1/(1+(means[3]/means[2])**2)* \
+    # correction step
+    weighted_var_mat = self.SensorVariance(arr, means, sensor_weights) 
+
+
+    # Fast and numerically precise (unweighted, prediction):
+    # variance = np.var(arr, axis=0)
+    sigma_out = 0.65
+    weights = [ sigma_out, sigma_out, sigma_out ,1 ,sigma_out, sigma_out, sigma_out]
+    weights = [weight / sum(weights) for weight in weights]
+    variance_vec = np.average((arr-means)**2, weights=weights, axis=0)
+    # print(np.sqrt(variance))
+    std = np.sqrt(variance_vec)
+    self.variance[0][0] = variance_vec[0]
+    self.variance[1][1] = variance_vec[1]
+    cos_variance = variance_vec[2]*1/(1+(means[3]/means[2])**2)* \
                       means[3]*1/(means[2]**2)
-    sin_variance = weighted_variance[3]*1/(1+(means[3]/means[2])**2)* \
+    sin_variance = variance_vec[3]*1/(1+(means[3]/means[2])**2)* \
                       1/means[2]
     theta_variance = math.sqrt(cos_variance**2 + sin_variance**2)
     self.variance[2][2] = theta_variance
 
-    heading = math.atan2(means[3], means[2])
+    # print("v: ", variance)
+    print('gep predicted v: \n', self.variance)
+    print('gep sensors v 2: ', weighted_var_mat)    
+    # calculate kalman gain
+    kalman_gain = self.variance * np.linalg.pinv(weighted_var_mat)
+    kalman_gain = kalman_gain / np.max(kalman_gain) / 2
+
+    print('inv weighted:\n', np.linalg.pinv(weighted_var_mat))
+    print('kalman gain:\n', kalman_gain)
+
+    self.variance = self.variance - kalman_gain * weighted_var_mat * np.transpose(kalman_gain)
+    print('fancy kalman_gain: ', kalman_gain * weighted_var_mat * np.transpose(kalman_gain))
+    print('gep v: ', self.variance)
 
     self.state.set_state(means[0], means[1], heading)
 
-    print('state actual', self.environment.robots[0].state_odo)
-    print('state ukf', self.state)
+    print('state actual', str(self.environment.robots[0].state_odo))
+    print('state ukf', str(self.state))
 
     return self.state
+
+
+  def SensorVariance(self, arr, means, sensor_weights):
+    # Fast and numerically precise (weighted, actual):
+    weighted_var_vec = np.average((arr-means)**2, weights=sensor_weights, axis=0)
+    weighted_var_mat = np.zeros((CONFIG_NUM_STATE_VARS, CONFIG_NUM_STATE_VARS))
+    # print(np.sqrt(weighted_var_vec))
+    weighted_std = np.sqrt(weighted_var_vec)
+    weighted_var_mat[0][0] = weighted_var_vec[0]
+    weighted_var_mat[1][1] = weighted_var_vec[1]
+    cos_variance = weighted_var_vec[2]*1/(1+(means[3]/means[2])**2)* \
+                      means[3]*1/(means[2]**2)
+    sin_variance = weighted_var_vec[3]*1/(1+(means[3]/means[2])**2)* \
+                      1/means[2]
+    theta_variance = math.sqrt(cos_variance**2 + sin_variance**2)
+    weighted_var_mat[2][2] = theta_variance
+
+    print("wv: ", weighted_var_vec)
+    print('gep sensor v 1: ', weighted_var_mat)
+
+    return weighted_var_mat
+
 
   def FindMinWallDistance(self, particle, walls, sensorT):
     ''' Given a particle position, walls, and a sensor, find 
@@ -360,3 +407,4 @@ class E160_UKF:
       while ang > math.pi:
         ang = ang - 2 * math.pi
       return ang
+

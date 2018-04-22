@@ -171,6 +171,10 @@ Set all of the regularly altered configurations here.
 
 CONFIG_LAB_NUMBER = 6
 
+####
+CONFIG_SENSOR_NOISE = 0.0
+
+
 ##### SET DESIRED STOP DISTANCE MODE HERE (for Lab 1) #####
 CONFIG_OFFSET_CM = 0.5*2.54
 CONFIG_DESIRED_DISTANCE_CM = 30.0 - CONFIG_OFFSET_CM

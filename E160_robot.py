@@ -2,7 +2,7 @@
 from E160_config import *
 from E160_state import *
 from E160_PF import *
-from E160_UKF import *
+from E160_UKF1 import *
 import math
 import datetime
 import time
@@ -10,8 +10,6 @@ import random
 
 CONFIG_PARTICLE_FILTER = "PF"
 CONFIG_UNSCENTED_KALMAN_FILTER = "UKF"
-
-CONFIG_SENSOR_NOISE = 0.0
 
 CONFIG_FILTER = CONFIG_UNSCENTED_KALMAN_FILTER
 
@@ -155,7 +153,9 @@ class E160_robot:
         self.var_ukf[1][1] = INIT_TRANSLATION_VARIANCE
         self.var_ukf[2][2] = INIT_ANGLE_VARIANCE
         self.UKF = E160_UKF(environment,
-                            self.state_ukf,
+                            np.array([self.state_ukf.x,
+                                      self.state_ukf.y,
+                                      self.state_ukf.theta]),
                             self.var_ukf, 
                             self.width, 
                             self.wheel_radius, 
@@ -198,7 +198,7 @@ class E160_robot:
         self.state_odo = self.localize(self.state_odo, self.encoder_measurements, self.range_measurements)
         
         # localize with particle filter
-        self.state_est = self.filter.LocalizeEstWithParticleFilter(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
+        self.state_est = self.filter.LocalizeEst(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
         # self.state_est = self.state_odo
         self.state_ctrl = self.state_odo
         # self.state_est
