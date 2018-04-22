@@ -159,6 +159,7 @@ class E160_graphics:
 
         # initilize particle representation
         self.particles_dot = [self.canvas.create_oval(0,0,0,0, fill ='black') for _ in range(self.environment.robots[0].filter.numParticles)]
+        # [print(x.heading,x.heading) for x in self.environment.robots[0].filter.particles]
         self.particles_line = [self.canvas.create_line(0,0,math.cos(x.heading),math.sin(x.heading), fill='black') for x in self.environment.robots[0].filter.particles]
 
         # draw static environment

@@ -85,10 +85,10 @@ class E160_PF:
                                       copied_particle.heading,
                                       copied_particle.weight)
             
-  def LocalizeEstWithParticleFilter(self, 
-                                    encoder_measurements, 
-                                    last_encoder_measurements, 
-                                    sensor_readings):
+  def LocalizeEst(self, 
+                  encoder_measurements, 
+                  last_encoder_measurements, 
+                  sensor_readings):
     ''' Localize the robot with particle filters. Call everything
       Args: 
         delta_s (float): change in distance as calculated by odometry
