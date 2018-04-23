@@ -107,7 +107,7 @@ class E160_UKF:
     """
     Create new lambda, update mean and covariance weights.
     """
-    lmbda = (self.alpha * (self.num_state_vars + self.kappa) 
+    lmbda = (self.alpha **2  * (self.num_state_vars + self.kappa) 
                   - self.num_state_vars)
 
     gamma = np.sqrt(self.num_state_vars + lmbda)
@@ -116,6 +116,7 @@ class E160_UKF:
     cov_weights = np.zeros(self.numParticles)
 
     # set weights for mean sigma point
+    print('lambda', lmbda, 'num_state_vars', self.num_state_vars)
     mean_weights[0] = lmbda / (self.num_state_vars + lmbda)
     cov_weights[0] = (lmbda / (self.num_state_vars + lmbda)
                            + 1.0 - self.alpha**2.0 + self.beta)
@@ -212,7 +213,7 @@ class E160_UKF:
   # step 8, 9 in Probabilistic Robotics
   def SensorMeanAndCovariance(self, expected_measurements_m):
     """ get mean and covariance of sensor measurements """
-
+    print('meanies ', self.mean_weights)
     # calculate mean expected sensor measurements
     expected_measurement_mean = np.average(expected_measurements_m, 
                                             axis=0, 
@@ -225,9 +226,8 @@ class E160_UKF:
 
     for i in range(self.numParticles):
       error = expected_measurements_m[i,:] - expected_measurement_mean
-      variance = variance + np.dot(self.cov_weights[i], 
-                                   np.dot(error,
-                                          np.transpose(error)))
+      print('error squared', error, np.transpose(error),  'sq', error * np.transpose(error))
+      variance = variance + self.cov_weights[i] * error * np.transpose(error)
       print('expected measurement variance 1', variance)
 
     expected_measurement_variance = variance + MEASUREMENT_COVARIANCE
