@@ -320,7 +320,7 @@ class E160_UKF:
     print('sense diff', sense_diff, sense_diff.shape)
     innovation = np.dot(kalman_gain, sense_diff)
     print('innovation', innovation, innovation.shape)
-    self.state = self.state + np.transpose(innovation)
+    self.state = self.state + innovation
     self.variance = self.variance - kalman_gain * exp_measurement_variance * np.linalg.inv(kalman_gain)
     print('state after 13', self.state)
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
