@@ -7,6 +7,8 @@ from scipy.stats import norm
 from scipy.linalg import sqrtm
 
 
+INITIAL_ERROR = np.array([0.05, 0, 0]).reshape((3,1))
+
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
 
@@ -22,7 +24,7 @@ RIGHT_SENSOR_ID = 0
 STRAIGHT_SENSOR_ID = 1
 LEFT_SENSOR_ID = 2
 
-CONFIG_SENSOR_NOISE = 0.0001
+# CONFIG_SENSOR_NOISE = 0.0001
 
 # R_t is the ``prediction noise'' - what is this?
 PREDICTION_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE**2, 0, 0],
@@ -95,7 +97,7 @@ class E160_UKF:
     self.sigma_points = np.zeros((CONFIG_NUM_STATE_VARS, self.numParticles))
 
     # initialize hypothesis for state and variance
-    self.state = np.array(initial_state).reshape(3,1)
+    self.state = np.array(initial_state).reshape(3,1) + INITIAL_ERROR
     print('init',initial_state)
     print('selfed',self.state)
     self.variance = np.array(initial_variance)
@@ -277,7 +279,7 @@ class E160_UKF:
                           + np.dot(self.cov_weights[i], 
                                    np.dot((state_error),
                                           (exp_measurement_error))))
-    print cross_covariance
+    print(cross_covariance)
 
     return cross_covariance
 
@@ -326,7 +328,7 @@ class E160_UKF:
     print('expected measurement variance 3', exp_measurement_variance)
 
     # step 11 - calculate Kalman gain
-    kalman_gain = cross_covariance*np.linalg.inv(exp_measurement_variance)
+    kalman_gain = cross_covariance*np.linalg.pinv(exp_measurement_variance)
     print('kalman gain', kalman_gain, kalman_gain.shape)
 
     # step 12,13 - use actual measurements to calculate new state estimate, covariance
@@ -336,7 +338,7 @@ class E160_UKF:
     innovation = np.dot(kalman_gain, sense_diff)
     print('innovation', innovation, innovation.shape)
     self.state = self.state + innovation
-    self.variance = self.variance - kalman_gain * exp_measurement_variance * np.linalg.inv(kalman_gain)
+    self.variance = self.variance - kalman_gain * exp_measurement_variance * np.linalg.pinv(kalman_gain)
     print('state after 13', self.state)
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
     return state
