@@ -230,7 +230,6 @@ class E160_UKF:
   # step 8, 9 in Probabilistic Robotics
   def SensorMeanAndCovariance(self, expected_measurements_m):
     """ get mean and covariance of sensor measurements """
-    print('meanies ', self.mean_weights)
     # calculate mean expected sensor measurements
     expected_measurement_mean = np.average(expected_measurements_m, 
                                             axis=0, 
@@ -238,19 +237,12 @@ class E160_UKF:
 
     # calculate new expected measurement variance
     variance = np.zeros((self.num_state_vars, self.num_state_vars))
-
-    print('covariance weights', self.cov_weights)
-    print('expected_measurements_m: ', expected_measurements_m)
-    print('ex mean: ', expected_measurement_mean)
     for i in range(self.numParticles):
       error = expected_measurements_m[i,:] - expected_measurement_mean
       error = np.array(error).reshape(len(error),1)
-      print('error squared', error, np.transpose(error),  'sq', error * np.transpose(error))
-      variance = variance + self.cov_weights[i] * error * np.transpose(error)
-      print('expected measurement variance 1', variance)
+      variance = variance + self.cov_weights[i] * np.dot(error, np.transpose(error))
 
     expected_measurement_variance = variance + MEASUREMENT_COVARIANCE
-    print('expected measurement variance 2', expected_measurement_variance, MEASUREMENT_COVARIANCE)
 
     return expected_measurement_mean, expected_measurement_variance
 
@@ -267,14 +259,9 @@ class E160_UKF:
     cross_covariance = np.zeros((self.num_state_vars, self.num_state_vars))
     particle_data = np.array([[p.x, p.y, p.heading] for p in self.particles])
     for i in range(self.numParticles):
-      print('particle data', particle_data[i,:])
-      print('CCC state', state)
       state_error = particle_data[i,:].reshape(3,1) - state # normalize heading
       state_error[2] = self.normalize_angle(state_error[2])
       exp_measurement_error = (expected_measurements_m[i,:] - expected_measurement_mean).reshape(1,3)
-      print('shapeee for hamzah', state_error.shape, exp_measurement_error.shape)
-      print('CCC dot: ', np.dot(state_error,
-                                          exp_measurement_error))
       cross_covariance = (cross_covariance 
                           + np.dot(self.cov_weights[i], 
                                    np.dot((state_error),
@@ -308,7 +295,6 @@ class E160_UKF:
     # step 4, 5 - calculate weighted means and covariance of sigma points
     # this step is already complete in step 1 since all weights are equal
     self.state, self.variance = self.PredictMeanAndCovariance()
-    print('state after 5', self.state)
 
     # step 6 - identify sigma points at time t using predicted mean, covariance
     self.particles = self.GenerateParticles(self.state, self.variance)
@@ -325,134 +311,19 @@ class E160_UKF:
                                                      expected_measurements_m, 
                                                      exp_measurement_mean)
 
-    print('expected measurement variance 3', exp_measurement_variance)
-
     # step 11 - calculate Kalman gain
-    kalman_gain = cross_covariance*np.linalg.pinv(exp_measurement_variance)
-    print('kalman gain', kalman_gain, kalman_gain.shape)
+    kalman_gain = np.dot(cross_covariance, np.linalg.inv(exp_measurement_variance))
 
     # step 12,13 - use actual measurements to calculate new state estimate, covariance
     sense_diff = np.array(sensor_readings - exp_measurement_mean).reshape(3,1)
-    print('state before 13', self.state)
-    print('sense diff', sense_diff, sense_diff.shape)
     innovation = np.dot(kalman_gain, sense_diff)
-    print('innovation', innovation, innovation.shape)
+
     self.state = self.state + innovation
-    self.variance = self.variance - kalman_gain * exp_measurement_variance * np.linalg.pinv(kalman_gain)
-    print('state after 13', self.state)
+    self.variance = self.variance - np.dot(kalman_gain, np.dot(exp_measurement_variance, np.linalg.inv(kalman_gain)))
+
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
     return state
-
-
-        
-  # def CalculateWeight(self, sensor_readings, walls, particle):
-  #   '''Calculate the weight of a particular particle
-  #     Args:
-  #       particle (E160_Particle): a given particle
-  #       sensor_readings ( [float, ...] ): readings from the IR sensors
-  #       walls ([ [four doubles], ...] ): positions of the walls from environment, 
-  #             represented as 4 doubles 
-  #     return:
-  #       new weight of the particle (float) '''
-
-  #   # newWeight = 0
     
-  #   # upper bound the distance at 1000 m
-  #   min_dist_right = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[0]), self.FAR_READING)
-  #   min_dist_straight = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[1]), self.FAR_READING)
-  #   min_dist_left = min(self.FindMinWallDistance(particle, walls, self.sensor_orientation[2]), self.FAR_READING)
-
-  #   error_right = min_dist_right - sensor_readings[2]
-  #   error_straight = min_dist_straight - sensor_readings[0]
-  #   error_left = min_dist_left - sensor_readings[1]
-
-  #   error = ((error_right)**2
-  #             + (error_straight)**2
-  #             + (error_left**2))
-  #   print('error', error_left, error_straight, error_right, min_dist_straight, sensor_readings[0])
-
-  #   prob = math.exp(-error/self.IR_sigma_m ** 2)
-  #   #print(prob)
-  #   #print(["%0.2f" % i for i in [min_dist_right, min_dist_straight, min_dist_left, particle.x, particle.y, prob]])
-
-  #   # make weights this nonzero
-  #   return prob
-
-  # def GetEstimatedPos(self):
-  #   ''' Calculate the mean of the particles and return it 
-  #     Args:
-  #       None
-  #     Return:
-  #       None'''
-  #   arr = np.array([[p.x, p.y, math.cos(p.heading), math.sin(p.heading)] for p in self.particles])
-  #   sensor_weights = np.array([p.weight for p in self.particles])
-
-  #    # identify new state
-  #   means = np.average(arr, axis=0, weights=sensor_weights)
-  #   heading = math.atan2(means[3], means[2])
-
-  #   # correction step
-  #   weighted_var_mat = self.SensorVariance(arr, means, sensor_weights) 
-
-
-  #   # Fast and numerically precise (unweighted, prediction):
-  #   # variance = np.var(arr, axis=0)
-  #   sigma_out = 0.65
-  #   weights = [ sigma_out, sigma_out, sigma_out ,1 ,sigma_out, sigma_out, sigma_out]
-  #   weights = [weight / sum(weights) for weight in weights]
-  #   variance_vec = np.average((arr-means)**2, weights=weights, axis=0)
-  #   # print(np.sqrt(variance))
-  #   std = np.sqrt(variance_vec)
-  #   self.variance[0][0] = variance_vec[0]
-  #   self.variance[1][1] = variance_vec[1]
-  #   cos_variance = variance_vec[2]*1/(1+(means[3]/means[2])**2)* \
-  #                     means[3]*1/(means[2]**2)
-  #   sin_variance = variance_vec[3]*1/(1+(means[3]/means[2])**2)* \
-  #                     1/means[2]
-  #   theta_variance = math.sqrt(cos_variance**2 + sin_variance**2)
-  #   self.variance[2][2] = theta_variance
-
-  #   # print("v: ", variance)
-  #   print('gep predicted v: \n', self.variance)
-  #   print('gep sensors v 2: ', weighted_var_mat)    
-  #   # calculate kalman gain
-  #   kalman_gain = self.variance * np.linalg.pinv(weighted_var_mat)
-  #   kalman_gain = kalman_gain / np.max(kalman_gain) / 2
-
-  #   print('inv weighted:\n', np.linalg.pinv(weighted_var_mat))
-  #   print('kalman gain:\n', kalman_gain)
-
-  #   self.variance = self.variance - kalman_gain * weighted_var_mat * np.transpose(kalman_gain)
-  #   print('fancy kalman_gain: ', kalman_gain * weighted_var_mat * np.transpose(kalman_gain))
-  #   print('gep v: ', self.variance)
-
-  #   self.state.set_state(means[0], means[1], heading)
-
-  #   print('state actual', str(self.environment.robots[0].state_odo))
-  #   print('state ukf', str(self.state))
-
-  #   return self.state
-
-
-  # def SensorVariance(self, arr, means, sensor_weights):
-  #   # Fast and numerically precise (weighted, actual):
-  #   weighted_var_vec = np.average((arr-means)**2, weights=sensor_weights, axis=0)
-  #   weighted_var_mat = np.zeros((CONFIG_NUM_STATE_VARS, CONFIG_NUM_STATE_VARS))
-  #   # print(np.sqrt(weighted_var_vec))
-  #   weighted_std = np.sqrt(weighted_var_vec)
-  #   weighted_var_mat[0][0] = weighted_var_vec[0]
-  #   weighted_var_mat[1][1] = weighted_var_vec[1]
-  #   cos_variance = weighted_var_vec[2]*1/(1+(means[3]/means[2])**2)* \
-  #                     means[3]*1/(means[2]**2)
-  #   sin_variance = weighted_var_vec[3]*1/(1+(means[3]/means[2])**2)* \
-  #                     1/means[2]
-  #   theta_variance = math.sqrt(cos_variance**2 + sin_variance**2)
-  #   weighted_var_mat[2][2] = theta_variance
-
-  #   print("wv: ", weighted_var_vec)
-  #   print('gep sensor v 1: ', weighted_var_mat)
-
-  #   return weighted_var_mat
 
 
   def FindMinWallDistance(self, particle, walls, sensorT):
