@@ -328,17 +328,19 @@ class E160_UKF:
     print('expected measurement variance 3', exp_measurement_variance)
 
     # step 11 - calculate Kalman gain
-    kalman_gain = cross_covariance*np.linalg.pinv(exp_measurement_variance)
+    kalman_gain = cross_covariance*np.linalg.inv(exp_measurement_variance)
     print('kalman gain', kalman_gain, kalman_gain.shape)
 
     # step 12,13 - use actual measurements to calculate new state estimate, covariance
     sense_diff = np.array(sensor_readings - exp_measurement_mean).reshape(3,1)
-    print('state before 13', self.state)
+    
     print('sense diff', sense_diff, sense_diff.shape)
     innovation = np.dot(kalman_gain, sense_diff)
+    print('state before 13', self.state)
+    print('diff between state and sensor state', )
     print('innovation', innovation, innovation.shape)
     self.state = self.state + innovation
-    self.variance = self.variance - kalman_gain * exp_measurement_variance * np.linalg.pinv(kalman_gain)
+    self.variance = self.variance - kalman_gain * exp_measurement_variance * np.linalg.inv(kalman_gain)
     print('state after 13', self.state)
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
     return state
