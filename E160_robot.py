@@ -145,8 +145,8 @@ class E160_robot:
                           2 * math.pi * self.wheel_radius * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
 
         # Final Project Unscented Kalman Filter
-        INIT_TRANSLATION_VARIANCE = 0.01
-        INIT_ANGLE_VARIANCE = 0.01
+        INIT_TRANSLATION_VARIANCE = CONFIG_INIT_TRANSLATION_VAR
+        INIT_ANGLE_VARIANCE = CONFIG_INIT_ANGLE_VAR
         self.var_ukf = np.zeros((3,3))
         self.var_ukf = np.zeros((3,3))
         self.var_ukf[0][0] = INIT_TRANSLATION_VARIANCE

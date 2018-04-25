@@ -22,7 +22,7 @@ RIGHT_SENSOR_ID = 0
 STRAIGHT_SENSOR_ID = 1
 LEFT_SENSOR_ID = 2
 
-CONFIG_SENSOR_NOISE = 0.1
+CONFIG_SENSOR_NOISE = 0.0001
 
 # R_t is the ``prediction noise'' - what is this?
 PREDICTION_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE**2, 0, 0],
@@ -286,7 +286,7 @@ class E160_UKF:
     sensor_readings = np.array([min(reading, self.FAR_READING) for reading in sensor_readings])
 
     # step 2 - identify sigma points at t-1
-    self.particles = self.GenerateParticles(self.state, self.variance)
+    # self.particles = self.GenerateParticles(self.state, self.variance)
 
     # step 3 - propagate set of sigma points
     self.PropagateSigmaPoints(encoder_measurements, last_encoder_measurements)
@@ -510,6 +510,7 @@ class E160_UKF:
 
   def normalize_angle(self, ang):
     ''' Wrap angles between -pi and pi'''
+    ang = ang % (2 * math.pi)
     while ang < -math.pi:
       ang = ang + 2 * math.pi
     while ang > math.pi:
