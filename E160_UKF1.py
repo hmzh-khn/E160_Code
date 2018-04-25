@@ -25,14 +25,14 @@ LEFT_SENSOR_ID = 2
 CONFIG_SENSOR_NOISE = 0.1
 
 # R_t is the ``prediction noise'' - what is this?
-PREDICTION_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE, 0, 0],
-                                  [0, CONFIG_SENSOR_NOISE, 0],
-                                  [0, 0, CONFIG_SENSOR_NOISE]]) 
+PREDICTION_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE**2, 0, 0],
+                                  [0, CONFIG_SENSOR_NOISE**2, 0],
+                                  [0, 0, CONFIG_SENSOR_NOISE**2]]) 
 
 # Q_t - measurement noise, for converting from sensor to absolute estimation
-MEASUREMENT_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE, 0, 0],
-                                   [0, CONFIG_SENSOR_NOISE, 0],
-                                   [0, 0, CONFIG_SENSOR_NOISE]])
+MEASUREMENT_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE**2, 0, 0],
+                                   [0, CONFIG_SENSOR_NOISE**2, 0],
+                                   [0, 0, CONFIG_SENSOR_NOISE**2]])
 
 def normalize_np_angle(ang):
   ang = ang % (2 * math.pi)
@@ -117,6 +117,7 @@ class E160_UKF:
     mean_weights = np.zeros(self.numParticles)
     cov_weights = np.zeros(self.numParticles)
 
+    
     # set weights for mean sigma point
     print('lambda', lmbda, 'num_state_vars', self.num_state_vars)
     mean_weights[0] = lmbda / (self.num_state_vars + lmbda)
@@ -126,6 +127,8 @@ class E160_UKF:
     # set other weights in filter
     mean_weights[1:] = 1.0 / (2 * (self.num_state_vars + lmbda))
     cov_weights[1:]  = 1.0 / (2 * (self.num_state_vars + lmbda))
+    
+
 
     return lmbda, gamma, mean_weights, cov_weights
 
@@ -148,9 +151,7 @@ class E160_UKF:
     # get mean state and use it to create sigma points
     x, y, theta = state[0][0], state[1][0], state[2][0]
 
-    print('a theta', theta)
     for i in range(numParticles):
-      print(sigma_offsets[i][2])
       # print(theta, sigma_offsets[i][2], theta+sigma_offsets[i][2])
       particles[i] = self.UKF_Particle(x + sigma_offsets[i][0] * np.cos(theta) - sigma_offsets[i][1] * np.sin(theta),
                                        y + sigma_offsets[i][0] * np.sin(theta) + sigma_offsets[i][1] * np.cos(theta),
@@ -212,6 +213,7 @@ class E160_UKF:
       expected_measurements_m[i][RIGHT_SENSOR_ID] = min_dist_right
       expected_measurements_m[i][STRAIGHT_SENSOR_ID] = min_dist_straight
       expected_measurements_m[i][LEFT_SENSOR_ID] = min_dist_left
+    print(expected_measurements_m)
 
     return expected_measurements_m
 
@@ -228,7 +230,8 @@ class E160_UKF:
     variance = np.zeros((self.num_state_vars, self.num_state_vars))
 
     print('covariance weights', self.cov_weights)
-
+    print('expected_measurements_m: ', expected_measurements_m)
+    print('ex mean: ', expected_measurement_mean)
     for i in range(self.numParticles):
       error = expected_measurements_m[i,:] - expected_measurement_mean
       error = np.array(error).reshape(len(error),1)
