@@ -117,7 +117,9 @@ class E160_UKF:
     mean_weights = np.zeros(self.numParticles)
     cov_weights = np.zeros(self.numParticles)
 
-    
+    print('*** THIS CODE IS PALMERIZED ***')
+
+    '''
     # set weights for mean sigma point
     print('lambda', lmbda, 'num_state_vars', self.num_state_vars)
     mean_weights[0] = lmbda / (self.num_state_vars + lmbda)
@@ -127,7 +129,13 @@ class E160_UKF:
     # set other weights in filter
     mean_weights[1:] = 1.0 / (2 * (self.num_state_vars + lmbda))
     cov_weights[1:]  = 1.0 / (2 * (self.num_state_vars + lmbda))
-    
+    '''
+    mean_weights[0] = 1 / (self.num_state_vars + 1)
+    cov_weights[0] = 1 / (self.num_state_vars + 1)
+
+    # set other weights in filter
+    mean_weights[1:] = (1.0 - mean_weights[0]) / (2 * (self.num_state_vars))
+    cov_weights[1:]  = (1.0 - cov_weights[0]) / (2 * (self.num_state_vars))
 
 
     return lmbda, gamma, mean_weights, cov_weights
@@ -261,11 +269,15 @@ class E160_UKF:
       print('CCC state', state)
       state_error = particle_data[i,:].reshape(3,1) - state # normalize heading
       state_error[2] = self.normalize_angle(state_error[2])
-      exp_measurement_error = expected_measurements_m[i,:] - expected_measurement_mean
+      exp_measurement_error = (expected_measurements_m[i,:] - expected_measurement_mean).reshape(1,3)
+      print('shapeee for hamzah', state_error.shape, exp_measurement_error.shape)
+      print('CCC dot: ', np.dot(state_error,
+                                          exp_measurement_error))
       cross_covariance = (cross_covariance 
                           + np.dot(self.cov_weights[i], 
-                                   np.dot(np.transpose(state_error),
-                                          np.transpose(exp_measurement_error))))
+                                   np.dot((state_error),
+                                          (exp_measurement_error))))
+    print cross_covariance
 
     return cross_covariance
 
