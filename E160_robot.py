@@ -30,9 +30,21 @@ INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
                       E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
                       E160_state(60.5, 12, CONFIG_HALF_TURN),]
 
+DEBUG_FORWARD_PATH_1 = [E160_state(10.25, 20, math.pi/2)]
+                      # E160_state(13.5, 34, CONFIG_QUARTER_TURN),
+                      # E160_state(13.5, 34, 3*CONFIG_EIGHTH_TURN),
+                      # E160_state(25, 41.5, 3*CONFIG_EIGHTH_TURN),
+                      # E160_state(25, 41.5, 5*CONFIG_EIGHTH_TURN),
+                      # E160_state(36.5, 28.125, 5*CONFIG_EIGHTH_TURN),
+                      # E160_state(38.5, 11.5, -CONFIG_QUARTER_TURN),
+                      # E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
+                      # E160_state(60.5, 12, CONFIG_HALF_TURN),]
+
 STD_PATH = [E160_state(36*CONFIG_IN_TO_M,0,0)]
 
-[s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in INDOOR_TEST_PATH_1]
+CONFIG_ROBOT_PATH = INDOOR_TEST_PATH_1
+[s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in CONFIG_ROBOT_PATH]
+
 
 class E160_robot:
 
@@ -40,7 +52,7 @@ class E160_robot:
         self.environment = environment
 
         # state estimation and destination
-        if(CONFIG_COURSE != INDOOR_COURSE):
+        if CONFIG_COURSE != INDOOR_COURSE:
             self.state_est = E160_state()
             self.state_est.set_state(0,0,0)
             self.state_des = E160_state()
@@ -120,8 +132,8 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        if(CONFIG_COURSE == INDOOR_COURSE):
-            self.path = INDOOR_TEST_PATH_1
+        if CONFIG_COURSE == INDOOR_COURSE:
+            self.path = CONFIG_ROBOT_PATH
         else:
             self.path = STD_PATH
         self.path_current_pos = 0
@@ -145,8 +157,8 @@ class E160_robot:
                           2 * math.pi * self.wheel_radius * CONFIG_RIGHT_CM_PER_SEC_TO_TICKS_PER_SEC_MAP[10])
 
         # Final Project Unscented Kalman Filter
-        INIT_TRANSLATION_VARIANCE = CONFIG_INIT_TRANSLATION_VAR
-        INIT_ANGLE_VARIANCE = CONFIG_INIT_ANGLE_VAR
+        INIT_TRANSLATION_VARIANCE = CONFIG_INIT_TRANSLATION_STDEV**2
+        INIT_ANGLE_VARIANCE = CONFIG_INIT_ANGLE_STDEV**2
         self.var_ukf = np.zeros((3,3))
         self.var_ukf = np.zeros((3,3))
         self.var_ukf[0][0] = INIT_TRANSLATION_VARIANCE
@@ -234,10 +246,12 @@ class E160_robot:
         # obtain sensor measurements
         elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
-            added_sensor_noise = [random.gauss(1,CONFIG_SENSOR_NOISE),random.gauss(1,CONFIG_SENSOR_NOISE),random.gauss(1,CONFIG_SENSOR_NOISE)]
-            sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0]) * added_sensor_noise[0]
-            sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1]) * added_sensor_noise[1]
-            sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2]) * added_sensor_noise[2]
+            added_sensor_noise = [random.gauss(0,CONFIG_SENSOR_NOISE_SIM),
+                                  random.gauss(0,CONFIG_SENSOR_NOISE_SIM),
+                                  random.gauss(0,CONFIG_SENSOR_NOISE_SIM)]
+            sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0]) + added_sensor_noise[0]
+            sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1]) + added_sensor_noise[1]
+            sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2]) + added_sensor_noise[2]
             range_measurements = [sensor2, sensor3, sensor1]
         
         return encoder_measurements, range_measurements
