@@ -341,6 +341,7 @@ class E160_UKF:
       self.state = self.state + innovation
       self.variance = self.variance - np.dot(kalman_gain, np.dot(exp_measurement_variance, np.linalg.pinv(kalman_gain)))
 
+
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
     return state
 

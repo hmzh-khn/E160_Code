@@ -6,6 +6,9 @@ from E160_config import *
 from E160_state import*
 from scipy.stats import norm
 
+
+INITIAL_ERROR = [0.05, 0, 0]
+
 CONFIG_RANDOM_START = True
 if CONFIG_RANDOM_START:
   CONFIG_GAUSS_MULT = 0.1
@@ -14,7 +17,6 @@ else:
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
 CONFIG_DELETE_PARTICLE_THRESHOLD = 1.0/2
-
 CONFIG_SENSOR_NOISE = 0.02
 
 CONFIG_NUM_STATE_VARS = 3
@@ -26,7 +28,8 @@ class E160_UKF:
     self.environment = environment
     self.numParticles = 2*CONFIG_NUM_STATE_VARS + 1
 
-    self.state = initial_state
+    print(initial_state)
+    self.state = initial_state + INITIAL_ERROR
     self.variance = initial_variance
     self.weighted_variance = initial_variance
     self.GenerateParticles()
@@ -74,7 +77,7 @@ class E160_UKF:
     print('GenerateParticles std: ', self.sigma_offsets)
     self.particles = self.numParticles*[0]
     # global state
-    x, y, theta = self.state.x, self.state.y, self.state.theta
+    x, y, theta = self.state[0], self.state[1], self.state[2] 
 
     for i in range(0, self.numParticles):
         self.particles[i] = self.UKF_Particle(x + self.sigma_offsets[0][i] * np.cos(theta) - self.sigma_offsets[1][i] * np.sin(theta),
@@ -130,7 +133,8 @@ class E160_UKF:
     
     if encoder_measurements != last_encoder_measurements:
       return self.GetEstimatedPos()
-    return self.state
+    out_state = E160_state(self.state[0], self.state[1], self.state[2])
+    return out_state
 
   def Propagate(self, encoder_measurements, last_encoder_measurements, i, rands):
     '''Propagate all the particles from the last state with odometry readings
@@ -226,12 +230,12 @@ class E160_UKF:
     print('fancy kalman_gain: ', kalman_gain * weighted_var_mat * np.transpose(kalman_gain))
     print('gep v: ', self.variance)
 
-    self.state.set_state(means[0], means[1], heading)
+    self.state = np.array([means[0], means[1], heading])
 
     print('state actual', str(self.environment.robots[0].state_odo))
     print('state ukf', str(self.state))
-
-    return self.state
+    out_state = E160_state(self.state[0], self.state[1], self.state[2])
+    return out_state
 
 
   def SensorVariance(self, arr, means, sensor_weights):
