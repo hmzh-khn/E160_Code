@@ -2,7 +2,7 @@
 from E160_config import *
 from E160_state import *
 from E160_PF import *
-from E160_UKF import *
+from E160_UKF1 import *
 import math
 import datetime
 import time
@@ -42,7 +42,7 @@ DEBUG_FORWARD_PATH_1 = [E160_state(10.25, 20, math.pi/2)]
 
 STD_PATH = [E160_state(36*CONFIG_IN_TO_M,0,0)]
 
-CONFIG_ROBOT_PATH = INDOOR_TEST_PATH_1
+CONFIG_ROBOT_PATH = DEBUG_FORWARD_PATH_1
 [s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in CONFIG_ROBOT_PATH]
 
 

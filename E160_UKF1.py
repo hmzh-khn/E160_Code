@@ -7,7 +7,7 @@ from scipy.stats import norm
 from scipy.linalg import sqrtm
 
 
-INITIAL_ERROR = np.array([0.05, 0, 0]).reshape((3,1))
+INITIAL_ERROR = np.array([0.0, 0, 0]).reshape((3,1))
 
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
@@ -153,7 +153,7 @@ class E160_UKF:
 
     # create sigma points using the gamma offset
     sigma_offsets = np.zeros((numParticles, self.num_state_vars))
-    offsets = np.abs(self.gamma * sqrtm(self.variance))
+    offsets = self.gamma * np.abs(sqrtm(self.variance))
 
     for i in range(self.num_state_vars):
       sigma_offsets[i + 1,:] = offsets[i,:]
@@ -249,7 +249,6 @@ class E160_UKF:
     variance = np.zeros((self.num_state_vars, self.num_state_vars))
     for i in range(self.numParticles):
       error = expected_measurements_m[i,:].reshape((3,1)) - expected_measurement_mean
-      error = np.array(error).reshape(len(error),1)
       variance = variance + self.cov_weights[i] * np.dot(error, np.transpose(error))
 
     expected_measurement_variance = variance + MEASUREMENT_COVARIANCE
@@ -269,16 +268,14 @@ class E160_UKF:
     cross_covariance = np.zeros((self.num_state_vars, self.num_state_vars))
     particle_data = np.array([[p.x, p.y, p.heading] for p in self.particles])
     for i in range(self.numParticles):
-      state_error = particle_data[i,:].reshape(3,1) - state
+      state_error = particle_data[i,:].reshape((3,1)) - state
       state_error[2] = self.normalize_angle(state_error[2])
-      # temp_error = particle_data[i,:].reshape(3,1) - state # normalize heading
-      # state_error = np.zeros(())
 
-      exp_measurement_error = (expected_measurements_m[i,:] - expected_measurement_mean).reshape(1,3)
+      exp_measurement_error = (expected_measurements_m[i,:].reshape((3,1)) - expected_measurement_mean).reshape((3,1))
       cross_covariance = (cross_covariance 
                           + np.dot(self.cov_weights[i], 
                                    np.dot((state_error),
-                                          (exp_measurement_error))))
+                                          (np.transpose(exp_measurement_error)))))
 
     return cross_covariance
 
@@ -295,7 +292,7 @@ class E160_UKF:
       Return:
         None'''
 
-    if self.delay % 15 == 3:
+    if self.delay % 15 == 5:
       raise Exception('third step')
     self.delay += 1
 
@@ -332,14 +329,16 @@ class E160_UKF:
                                                        exp_measurement_mean)
 
       # step 11 - calculate Kalman gain
-      kalman_gain = np.dot(cross_covariance, np.linalg.pinv(exp_measurement_variance))
+      kalman_gain = np.dot(cross_covariance, np.linalg.inv(exp_measurement_variance))
+      print('kalman gain', kalman_gain)
+
 
       # step 12,13 - use actual measurements to calculate new state estimate, covariance
       sense_diff = np.array(sensor_readings - exp_measurement_mean).reshape(3,1)
       innovation = np.dot(kalman_gain, sense_diff)
 
       self.state = self.state + innovation
-      self.variance = self.variance - np.dot(kalman_gain, np.dot(exp_measurement_variance, np.linalg.pinv(kalman_gain)))
+      self.variance = self.variance - np.dot(kalman_gain, np.dot(exp_measurement_variance, np.linalg.inv(kalman_gain)))
 
 
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
