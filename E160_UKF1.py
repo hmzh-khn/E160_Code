@@ -20,9 +20,9 @@ CONFIG_BETA = 2.0
 CONFIG_KAPPA = 0.0
 
 # enums for direction
-RIGHT_SENSOR_ID = 0
-STRAIGHT_SENSOR_ID = 1
-LEFT_SENSOR_ID = 2
+RIGHT_SENSOR_ID = 2
+STRAIGHT_SENSOR_ID = 0
+LEFT_SENSOR_ID = 1
 
 print("sensor noise", CONFIG_SENSOR_NOISE_STDEV)
 print("initial translation stdev", CONFIG_INIT_TRANSLATION_STDEV)
@@ -62,7 +62,7 @@ class E160_UKF:
     self.wheel_radius_m = wheel_radius
 
     # define the sensor orientations
-    self.sensor_orientation = [-math.pi/2, 0, math.pi/2] # orientations of the sensors on robot
+    self.sensor_orientation = [0, math.pi/2, -math.pi/2] # orientations of the sensors on robot
     self.num_sensors = len(self.sensor_orientation)
     self.walls = environment.walls
 
@@ -190,9 +190,12 @@ class E160_UKF:
     particle_data = np.array([[p.x, p.y, math.cos(p.heading), math.sin(p.heading)] for p in self.particles])
 
     # calculate mean state
+    print('particle data', particle_data)
     mean_state = np.average(particle_data, axis=0, weights=self.mean_weights)
+    print('state in 4,5 a', mean_state)
     heading = np.arctan2(mean_state[3], mean_state[2])
     mean_state = np.array([mean_state[0], mean_state[1], heading]).reshape(3,1)
+    print('state in 4,5 b', mean_state)
 
     particle_data[:,2] = np.arctan2(particle_data[:,3], particle_data[:,2])
     particle_data = particle_data[:,0:3]
@@ -269,6 +272,7 @@ class E160_UKF:
     particle_data = np.array([[p.x, p.y, p.heading] for p in self.particles])
     for i in range(self.numParticles):
       state_error = particle_data[i,:].reshape((3,1)) - state
+      print(i, 'state error, mean state', state_error, state)
       state_error[2] = self.normalize_angle(state_error[2])
 
       exp_measurement_error = (expected_measurements_m[i,:].reshape((3,1)) - expected_measurement_mean).reshape((3,1))
@@ -276,6 +280,7 @@ class E160_UKF:
                           + np.dot(self.cov_weights[i], 
                                    np.dot((state_error),
                                           (np.transpose(exp_measurement_error)))))
+      print(i, 'cross covariance', cross_covariance)
 
     return cross_covariance
 
@@ -299,18 +304,21 @@ class E160_UKF:
     # convert sensor readings to distances (with max of 1.5m)
     sensor_readings = np.array([min(reading, self.FAR_READING) for reading in sensor_readings]).reshape((3,1))
 
+    print('before 2 state', self.state)
     # step 2 - identify sigma points at t-1
     self.particles = self.GenerateParticles(self.state, self.variance)
+    print('after 2 state', self.state)
 
     # step 3 - propagate set of sigma points
     self.PropagateSigmaPoints(encoder_measurements, last_encoder_measurements)
+    print('after 3 state', self.state)
 
     # step 4, 5 - calculate weighted means and covariance of sigma points
     # this step is already complete in step 1 since all weights are equal
-    var = self.variance
+    var1 = self.variance
     self.state, self.variance = self.PredictMeanAndCovariance()
-
-    print('variance before -> after\n', var, '\n', self.variance)
+    print('before 6 state', self.state)
+    # print('variance before -> after\n', var, '\n', self.variance)
 
     if True:
       # step 6 - identify sigma points at time t using predicted mean, covariance
@@ -321,27 +329,37 @@ class E160_UKF:
 
       # step 8, 9 - calculate mean and variance of expected sensor measurements
       exp_measurement_mean, exp_measurement_variance = self.SensorMeanAndCovariance(expected_measurements_m)
+      # print('exp measurement variance', exp_measurement_variance)
 
       # step 10 - calculate cross-covariance between predicted state and measurements
       cross_covariance = self.CalculateCrossCovariance(self.particles, 
                                                        self.state, 
                                                        expected_measurements_m, 
                                                        exp_measurement_mean)
+      # print('cross variance, \nstate same across row (x, y, theta), \nmeasurement (straight, left, right) same across column \n', cross_covariance)
 
       # step 11 - calculate Kalman gain
+      print('exp_measurement_variance inverse\n', np.linalg.inv(exp_measurement_variance))
       kalman_gain = np.dot(cross_covariance, np.linalg.inv(exp_measurement_variance))
       print('kalman gain', kalman_gain)
 
-
       # step 12,13 - use actual measurements to calculate new state estimate, covariance
-      sense_diff = np.array(sensor_readings - exp_measurement_mean).reshape(3,1)
-      innovation = np.dot(kalman_gain, sense_diff)
+      print('sensor v. expected sensor mean', sensor_readings, exp_measurement_mean)
+      innovation = sensor_readings - exp_measurement_mean
+      print('innovation, delta state', innovation, np.dot(kalman_gain, innovation))
+      print('state before innovate', self.state)
 
-      self.state = self.state + innovation
+      self.state = self.state + np.dot(kalman_gain, innovation)
+      print('state after innovate', self.state)
+      var2 = self.variance
       self.variance = self.variance - np.dot(kalman_gain, np.dot(exp_measurement_variance, np.linalg.inv(kalman_gain)))
 
+      print('variance before -> after -> after correction \n', var1, '\n', var2, '\n', self.variance)
+
+      print(self.delay, 'over \n\n\n\n')
 
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
+    print('palmer oops?', state,'\n', self.state[1][0])
     return state
 
 
