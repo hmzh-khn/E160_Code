@@ -95,6 +95,7 @@ class E160_UKF:
     self.lmbda, self.gamma, self.mean_weights, self.cov_weights = self.UpdateWeights()
 
     print('mean weights',self.mean_weights)
+    print(sum(self.mean_weights))
     print('cov weights',self.cov_weights)
 
     # structures that hold data for the sigma points
@@ -332,13 +333,14 @@ class E160_UKF:
       kalman_gain = np.dot(cross_covariance, np.linalg.inv(exp_measurement_variance))
       print('kalman gain', kalman_gain)
 
-
       # step 12,13 - use actual measurements to calculate new state estimate, covariance
       sense_diff = np.array(sensor_readings - exp_measurement_mean).reshape(3,1)
       innovation = np.dot(kalman_gain, sense_diff)
 
       self.state = self.state + innovation
       self.variance = self.variance - np.dot(kalman_gain, np.dot(exp_measurement_variance, np.linalg.inv(kalman_gain)))
+
+      
 
 
     state = E160_state(self.state[0][0], self.state[1][0], self.state[2][0])
