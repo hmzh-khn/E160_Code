@@ -16,7 +16,7 @@ CONFIG_FILTER = CONFIG_UNSCENTED_KALMAN_FILTER
 TEST_PATH_1 = [E160_state(0,0,0), 
                E160_state(0.25,0,0), 
                E160_state(-0.3,0, math.pi),
-               E160_state(-0.3,0.5, math.pi),
+               E160_state(-0.2,0.5, math.pi),
                E160_state(-0.1,-0.1, math.pi)]
 
 INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
@@ -430,6 +430,10 @@ class E160_robot:
         # alpha = round(self.R_motor_scaling_factor, 4)
         if hasattr(self.filter, "variance"):
             log_var = self.filter.variance 
+            var_str = []
+            for i in range(len(log_var))    :
+                for j in range(len(log_var)):
+                    var_str.append(log_var[i][j])
         else:
             log_var =  ""
         error = [self.state_odo.x-self.state_est.x, 
@@ -437,7 +441,7 @@ class E160_robot:
                     self.state_odo.theta-self.state_est.theta]
         data = [str(self.L), str(self.R), str(self.state_odo),
                  str(self.delta_left), str(self.delta_right), str(self.state_est),
-                 str(error), str(log_var)]
+                 str(error), str(var_str)]
         
         f.write(' '.join(data) + '\n')
         f.close()
