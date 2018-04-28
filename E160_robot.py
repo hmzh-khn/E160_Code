@@ -428,7 +428,14 @@ class E160_robot:
 
         # log distance from wall to 2 decimal places
         # alpha = round(self.R_motor_scaling_factor, 4)
-        data = [str(self.L), str(self.R), str(self.state_odo), str(self.delta_left), str(self.delta_right), str(self.state_est)]
+        if hasattr(self.filter, "variance"):
+            log_var = self.filter.variance 
+        else:
+            log_var =  ""
+        error = [state_odo.x-state_est.x, state_odo.y-state_est.y, state_odo.theta-state_est.theta]
+        data = [str(self.L), str(self.R), str(self.state_odo),
+                 str(self.delta_left), str(self.delta_right), str(self.state_est),
+                 str(error), str(log_var)]
         
         f.write(' '.join(data) + '\n')
         f.close()

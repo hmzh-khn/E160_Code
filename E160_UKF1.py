@@ -334,7 +334,7 @@ class E160_UKF:
     self.particles = self.GenerateParticles(self.state, self.variance)
 
     p = self.particles
-    [print(i, ' particle:', p[i].x, p[i].y, p[i].heading) for i in range(len(self.particles))]
+    #[print(i, ' particle:', p[i].x, p[i].y, p[i].heading) for i in range(len(self.particles))]
 
     # step 3 - propagate set of sigma points
     self.PropagateSigmaPoints(encoder_measurements, last_encoder_measurements)
