@@ -52,7 +52,7 @@ class E160_robot:
         self.environment = environment
 
         # state estimation and destination
-        if CONFIG_COURSE != INDOOR_COURSE:
+        if CONFIG_COURSE != INDOOR_COURSE and CONFIG_COURSE != EASY_INDOOR :
             x0, y0, t0 = 0, 0, 0
             self.state_est = E160_state()
             self.state_est.set_state(0,0,0)
