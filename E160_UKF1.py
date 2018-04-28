@@ -295,7 +295,7 @@ class E160_UKF:
     for i in range(self.numParticles):
       print(i, expected_measurements_m[i,:])
       exp_far_readings_ndx[expected_measurements_m[i,:] == self.FAR_READING] = True
-      # exp_far_readings_ndx[abs(expected_measurements_m[i,:] - sensor_readings)[:,0] > CONFIG_TOO_BIG_SENSOR_ERROR] = True
+      exp_far_readings_ndx[abs(expected_measurements_m[i,:] - sensor_readings)[:,0] > CONFIG_TOO_BIG_SENSOR_ERROR] = True
       
     # combines knowledge from sensors and expected measurements
     use_sensor_flags = far_readings_ndx
