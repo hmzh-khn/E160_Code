@@ -29,14 +29,10 @@ print("initial translation stdev", CONFIG_INIT_TRANSLATION_STDEV)
 print("initial angle stdev", CONFIG_INIT_ANGLE_STDEV)
 
 # R_t is the ``prediction noise'' - what is this?
-PREDICTION_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE_STDEV**2, 0, 0],
-                                  [0, CONFIG_SENSOR_NOISE_STDEV**2, 0],
-                                  [0, 0, CONFIG_SENSOR_NOISE_STDEV**2]]) 
+PREDICTION_COVARIANCE = np.eye(CONFIG_NUM_STATE_VARS) * CONFIG_INIT_TRANSLATION_STDEV**2
 
 # Q_t - measurement noise, for converting from sensor to absolute estimation
-MEASUREMENT_COVARIANCE = np.array([[CONFIG_SENSOR_NOISE_STDEV**2, 0, 0],
-                                   [0, CONFIG_SENSOR_NOISE_STDEV**2, 0],
-                                   [0, 0, CONFIG_SENSOR_NOISE_STDEV**2]])
+MEASUREMENT_COVARIANCE = np.eye(CONFIG_NUM_SENSORS) * CONFIG_SENSOR_NOISE_STDEV**2
 
 def normalize_np_angle(ang):
   ang = ang % (2 * math.pi)
@@ -62,8 +58,10 @@ class E160_UKF:
     self.wheel_radius_m = wheel_radius
 
     # define the sensor orientations
-    self.sensor_orientation = [0, math.pi/2, -math.pi/2] # orientations of the sensors on robot
-    self.num_sensors = len(self.sensor_orientation)
+    
+    self.num_sensors = CONFIG_NUM_SENSORS
+    self.sensor_orientation = [0, math.pi/2, -math.pi/2, math.pi/4, -math.pi/4, 3*math.pi/4, -3*math.pi/4, math.pi] # orientations of the sensors on robot
+    self.sensor_orientation = self.sensor_orientation[0:self.num_sensors]
     self.walls = environment.walls
 
     # control signal sensor (process) information
@@ -241,15 +239,18 @@ class E160_UKF:
     # calculate mean expected sensor measurements
     expected_measurement_mean = np.average(expected_measurements_m, 
                                             axis=0, 
-                                            weights=self.mean_weights).reshape((3,1))
+                                            weights=self.mean_weights).reshape((self.num_sensors,1))
     print('expected measurements\n', expected_measurements_m)
     # calculate new expected measurement variance
-    variance = np.zeros((self.num_state_vars, self.num_state_vars))
+    variance = np.zeros((CONFIG_NUM_SENSORS, CONFIG_NUM_SENSORS))
     for i in range(self.numParticles):
       # far_readings_ndx = expected_measurements_m[i,:] == self.FAR_READING
 
 
-      error = expected_measurements_m[i,:].reshape((3,1)) - expected_measurement_mean
+      error = expected_measurements_m[i,:].reshape((self.num_sensors,1)) - expected_measurement_mean
+      print('error',error.shape,error)
+      print('error',np.transpose(error).shape,np.transpose(error))
+      print(variance)
       variance = variance + self.cov_weights[i] * np.dot(error, np.transpose(error))
 
     expected_measurement_variance = variance + MEASUREMENT_COVARIANCE
@@ -266,14 +267,14 @@ class E160_UKF:
     """ calculate cross covariance between measurement estimates and state prediction """
 
     # calculate cross variance
-    cross_covariance = np.zeros((self.num_state_vars, self.num_state_vars))
+    cross_covariance = np.zeros((self.num_state_vars, CONFIG_NUM_SENSORS))
     particle_data = np.array([[p.x, p.y, p.heading] for p in self.particles])
     for i in range(self.numParticles):
       state_error = particle_data[i,:].reshape((3,1)) - state
       # print(i, 'state error, mean state', state_error, state)
       state_error[2] = self.normalize_angle(state_error[2])
 
-      exp_measurement_error = (expected_measurements_m[i,:].reshape((3,1)) - expected_measurement_mean).reshape((3,1))
+      exp_measurement_error = (expected_measurements_m[i,:].reshape((self.num_sensors,1)) - expected_measurement_mean).reshape((self.num_sensors,1))
       cross_covariance = (cross_covariance 
                           + np.dot(self.cov_weights[i], 
                                    np.dot((state_error),
@@ -327,7 +328,7 @@ class E160_UKF:
     self.delay += 1
 
     # convert sensor readings to distances (with max of 1.5m)
-    sensor_readings = np.array([min(reading, self.FAR_READING) for reading in sensor_readings]).reshape((3,1))
+    sensor_readings = np.array([min(reading, self.FAR_READING) for reading in sensor_readings]).reshape((self.num_sensors,1))
 
     print('before 2 state', self.state)
     # step 2 - identify sigma points at t-1
