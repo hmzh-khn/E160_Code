@@ -20,7 +20,7 @@ def main():
         if not graphics.update():
             break
         
-        input()
+        raw_input()
         # update robots
         environment.update_robots(deltaT)
         

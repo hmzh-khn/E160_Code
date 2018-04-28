@@ -418,7 +418,7 @@ class E160_robot:
     def make_headers(self):
         f = open(self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        names = ['desired_tick_rate_L', 'desired_tick_rate_R', 'state_odo_x', 'state_odo_y', 'state_odo_theta', 'deltaleftEnc', 'deltarightEnc', 'pf_state_x', 'pf_state_y', 'pf_state_theta']
+        names = ['desired_tick_rate_L', 'desired_tick_rate_R', 'state_odo_x', 'state_odo_y', 'state_odo_theta', 'deltaleftEnc', 'deltarightEnc', 'pf_state_x', 'pf_state_y', 'pf_state_theta', 'est_error_x','est_error_y','est_error_theta','variance']
         f.write(' '.join(names) + '\n')
         f.close()
 
@@ -432,7 +432,9 @@ class E160_robot:
             log_var = self.filter.variance 
         else:
             log_var =  ""
-        error = [state_odo.x-state_est.x, state_odo.y-state_est.y, state_odo.theta-state_est.theta]
+        error = [self.state_odo.x-self.state_est.x, 
+                    self.state_odo.y-self.state_est.y, 
+                    self.state_odo.theta-self.state_est.theta]
         data = [str(self.L), str(self.R), str(self.state_odo),
                  str(self.delta_left), str(self.delta_right), str(self.state_est),
                  str(error), str(log_var)]
