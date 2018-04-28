@@ -30,7 +30,7 @@ INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
                       E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
                       E160_state(60.5, 12, CONFIG_HALF_TURN),]
 
-DEBUG_FORWARD_PATH_1 = [E160_state(10.25, 20, math.pi/2)]
+DEBUG_FORWARD_PATH_1 = [E160_state(10.25, 34, math.pi/2)]
                       # E160_state(13.5, 34, CONFIG_QUARTER_TURN),
                       # E160_state(13.5, 34, 3*CONFIG_EIGHTH_TURN),
                       # E160_state(25, 41.5, 3*CONFIG_EIGHTH_TURN),
@@ -40,9 +40,9 @@ DEBUG_FORWARD_PATH_1 = [E160_state(10.25, 20, math.pi/2)]
                       # E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
                       # E160_state(60.5, 12, CONFIG_HALF_TURN),]
 
-STD_PATH = [E160_state(36*CONFIG_IN_TO_M,0,0)]
+STD_PATH = TEST_PATH_1#[E160_state(36*CONFIG_IN_TO_M,0,0)]
 
-CONFIG_ROBOT_PATH = DEBUG_FORWARD_PATH_1
+CONFIG_ROBOT_PATH = INDOOR_TEST_PATH_1
 [s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in CONFIG_ROBOT_PATH]
 
 
@@ -53,6 +53,7 @@ class E160_robot:
 
         # state estimation and destination
         if CONFIG_COURSE != INDOOR_COURSE:
+            x0, y0, t0 = 0, 0, 0
             self.state_est = E160_state()
             self.state_est.set_state(0,0,0)
             self.state_des = E160_state()
