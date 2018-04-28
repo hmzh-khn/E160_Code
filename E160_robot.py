@@ -418,7 +418,28 @@ class E160_robot:
     def make_headers(self):
         f = open(self.file_name, 'a+')
         # f.write('{0} {1:^1} {2:^1} {3:^1} {4:^1} \n'.format('R1', 'R2', 'R3', 'RW', 'LW'))
-        names = ['desired_tick_rate_L', 'desired_tick_rate_R', 'state_odo_x', 'state_odo_y', 'state_odo_theta', 'deltaleftEnc', 'deltarightEnc', 'pf_state_x', 'pf_state_y', 'pf_state_theta', 'est_error_x','est_error_y','est_error_theta','variance']
+        names = ['desired_tick_rate_L',
+                 'desired_tick_rate_R',
+                 'state_odo_x',
+                 'state_odo_y',
+                 'state_odo_theta',
+                 'deltaleftEnc',
+                 'deltarightEnc',
+                 'pf_state_x',
+                 'pf_state_y',
+                 'pf_state_theta',
+                 'est_error_x',
+                 'est_error_y',
+                 'est_error_theta',
+                 'variance00',
+                 'variance01',
+                 'variance02',
+                 'variance10',
+                 'variance11',
+                 'variance12',
+                 'variance20',
+                 'variance21',
+                 'variance22']
         f.write(' '.join(names) + '\n')
         f.close()
 
@@ -439,9 +460,24 @@ class E160_robot:
         error = [self.state_odo.x-self.state_est.x, 
                     self.state_odo.y-self.state_est.y, 
                     self.state_odo.theta-self.state_est.theta]
-        data = [str(self.L), str(self.R), str(self.state_odo),
-                 str(self.delta_left), str(self.delta_right), str(self.state_est),
-                 str(error), str(var_str)]
+        data = [str(self.L), 
+                str(self.R), 
+                str(self.state_odo),
+                str(self.delta_left), 
+                str(self.delta_right), 
+                str(self.state_est),
+                str(error[0]),
+                str(error[1]),
+                str(error[2]),
+                str(var_str[0]),
+                str(var_str[1]),
+                str(var_str[2]),
+                str(var_str[3]),
+                str(var_str[4]),
+                str(var_str[5]),
+                str(var_str[6]),
+                str(var_str[7]),
+                str(var_str[8])]
         
         f.write(' '.join(data) + '\n')
         f.close()

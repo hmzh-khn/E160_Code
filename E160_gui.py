@@ -1,6 +1,7 @@
 """
 E160_gui.py
 """
+import sys
 from E160_config import CONFIG_DELTA_T
 import time
 from E160_environment import *
@@ -20,7 +21,7 @@ def main():
         if not graphics.update():
             break
         
-        raw_input()
+        input()
         # update robots
         environment.update_robots(deltaT)
         

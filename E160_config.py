@@ -20,6 +20,11 @@ if platform.system() == "Windows":
 else:
   CONFIG_PORT = "/dev/tty.usbserial-DN02Z6QO"
 
+# if python 2, set input to raw_input
+input = input
+if sys.version_info[0] == 2:
+  input = raw_input
+
 
 HARDWARE_MODE = "HARDWARE MODE"
 SIMULATION_MODE = "SIMULATION MODE"
