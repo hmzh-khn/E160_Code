@@ -133,7 +133,7 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        if CONFIG_COURSE == INDOOR_COURSE:
+        if CONFIG_COURSE == INDOOR_COURSE or CONFIG_COURSE == EASY_INDOOR:
             self.path = CONFIG_ROBOT_PATH
         else:
             self.path = STD_PATH
@@ -213,7 +213,7 @@ class E160_robot:
         # localize with particle filter
         self.state_est = self.filter.LocalizeEst(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
         # self.state_est = self.state_odo
-        self.state_ctrl = self.state_est
+        self.state_ctrl = self.state_odo
         # self.state_est
 
         # to out put the true location for display purposes only. 
