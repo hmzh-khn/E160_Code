@@ -16,9 +16,11 @@ import math
 
 PATH_HEAD = "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/Log/"
 
-FILE = PATH_HEAD + "Bot0_18-04-27 21.52.09.txt"
+# CHANGE TO FILE NAMES OF ACTUAL TESTS
+FILE = PATH_HEAD + "Bot0_18-04-27 22.03.35.txt"
 data = pd.read_csv(FILE, sep=" ")
-print(data.shape)
+
+# MAYBE NEED SOME DIRECTION FLIPPING FOR SIMULATION FILES
 
 def normalize_angle(theta):
   '''
@@ -27,6 +29,87 @@ def normalize_angle(theta):
   out_angle = theta % (2 * math.pi)
   greater_than_pi = (out_angle > math.pi).astype(int)
   return out_angle - 2 * math.pi * greater_than_pi
+
+
+# example of printing path - translation
+plt.figure()
+plt.title('robot translational path odometry v. ukf')
+plt.plot(data['state_odo_x'], data['state_odo_y'], 'bo', label='odometry position')
+plt.plot(data['pf_state_x'], data['pf_state_y'], 'rx', label='ukf position')
+plt.xlabel('x pos (cm)')
+plt.ylabel('y pos (cm)')
+# plt.xlim(-30,150)
+# plt.ylim(-100,45)
+plt.legend()
+
+
+# example of printing path - translation
+plt.figure()
+plt.title('robot angular path odometry v. ukf')
+plt.plot(data['state_odo_theta'], 'bo', label='odometry angle')
+plt.plot(data['pf_state_theta'], 'rx', label='ukf angle')
+plt.xlabel('sample number')
+plt.ylabel('angle (rad)')
+# plt.xlim(-30,150)
+plt.ylim(-np.pi, np.pi)
+plt.legend()
+
+
+# example of printing position error
+plt.figure()
+plt.title('robot translational path distance error odometry v. ukf')
+plt.plot(data['est_error_x'], 'bo', label='error in x')
+plt.plot(data['est_error_y'], 'rx', label='error in y')
+plt.xlabel('sample number')
+plt.ylabel('distance error (m)')
+# plt.xlim(-30,150)
+# plt.ylim(-np.pi, np.pi)
+plt.legend()
+
+
+# example of printing angular error
+plt.figure()
+plt.title('robot angular path error odometry v. ukf')
+plt.plot(data['est_error_theta'], 'bo', label='error in theta')
+plt.xlabel('sample number')
+plt.ylabel('angle error (rad)')
+# plt.xlim(-30,150)
+# plt.ylim(-np.pi, np.pi)
+plt.legend()
+
+
+# example of printing translational variance
+plt.figure()
+plt.title('robot translational path variance ukf')
+plt.plot(data['variance00'], 'bo', label='variance in x w.r.t. x')
+plt.plot(data['variance11'], 'rx', label='variance in y w.r.t. y')
+plt.xlabel('sample number')
+plt.ylabel('distance variance (m^2)')
+# plt.xlim(-30,150)
+# plt.ylim(-np.pi, np.pi)
+plt.legend()
+
+plt.figure()
+plt.title('robot angular path variance ukf')
+plt.plot(data['variance22'], 'bo', label='variance in theta w.r.t. theta')
+# plt.plot(data['variance11'], 'rx', label='variance in y w.r.t. y')
+plt.xlabel('sample number')
+plt.ylabel('angular variance (rad^2)')
+# plt.xlim(-30,150)
+# plt.ylim(-np.pi, np.pi)
+plt.legend()
+
+
+# plt.figure()
+# plt.title('full path state (x,y) - known start in simulation (400 particles)')
+# plt.plot(softsim['state_odo_x'], softsim['state_odo_y'], 'bo', label='knownstart_sim_odo')
+# plt.plot(softsim['pf_state_x'], softsim['pf_state_y'], 'rx', label='knownstart_sim_pf')
+# plt.xlabel('x pos (cm)')
+# plt.ylabel('y pos (cm)')
+# plt.xlim(-30,150)
+# plt.ylim(-100,45)
+# plt.legend()
+
 
 # # path locations
 # ODOMETRY_FILEPATH   = PATH_HEAD+"KnownStart_P400_Hardware.csv"
@@ -235,5 +318,5 @@ def normalize_angle(theta):
 # plt.legend()
 
 
-# plt.show()
+plt.show()
 
