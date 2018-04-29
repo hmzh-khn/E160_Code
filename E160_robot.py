@@ -98,7 +98,7 @@ class E160_robot:
         
         self.last_encoder_measurements = [0,0]
         self.encoder_measurements = [0,0]
-        self.range_measurements = [0,0,0]
+        self.range_measurements = [0]*CONFIG_NUM_SENSORS
         self.last_simulated_encoder_R = 0
         self.last_simulated_encoder_L = 0
 
@@ -247,13 +247,11 @@ class E160_robot:
         # obtain sensor measurements
         elif CONFIG_IN_SIMULATION_MODE(self.environment.robot_mode):
             encoder_measurements = self.simulate_encoders(self.R, self.L, deltaT)
-            added_sensor_noise = [random.gauss(0,CONFIG_SENSOR_NOISE_SIM),
-                                  random.gauss(0,CONFIG_SENSOR_NOISE_SIM),
-                                  random.gauss(0,CONFIG_SENSOR_NOISE_SIM)]
-            sensor1 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[0]) + added_sensor_noise[0]
-            sensor2 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[1]) + added_sensor_noise[1]
-            sensor3 = self.simulate_range_finder(self.state_odo, self.PF.sensor_orientation[2]) + added_sensor_noise[2]
-            range_measurements = [sensor2, sensor3, sensor1]
+            range_measurements = []
+            for i in range(CONFIG_NUM_SENSORS):
+                added_sensor_noise = random.gauss(0,CONFIG_SENSOR_NOISE_SIM)
+                range_measurements.append(self.simulate_range_finder(self.state_odo, self.filter.sensor_orientation[i]) + added_sensor_noise)
+
         
         return encoder_measurements, range_measurements
         

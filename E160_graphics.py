@@ -100,14 +100,13 @@ class E160_graphics:
         self.track_point_button = Button(self.bottom_frame, text="Quit", anchor="s", wraplength=100, command=self.quit).pack()
   
 
-
+        self.range_sensors = []
+        self.range_sensor_labels = []
         # add range sensor measurements
-        self.range_sensor_var_1 = StringVar()
-        self.range_sensor_var_2 = StringVar()
-        self.range_sensor_var_3 = StringVar()
-        self.range_sensor_label_1 = Label(self.north_west_frame, textvariable = self.range_sensor_var_1).pack()
-        self.range_sensor_label_2 = Label(self.north_west_frame, textvariable = self.range_sensor_var_2).pack()
-        self.range_sensor_label_3 = Label(self.north_west_frame, textvariable = self.range_sensor_var_3).pack()
+        for i in range(CONFIG_NUM_SENSORS):
+            print('rs',i)
+            self.range_sensors.append(StringVar())
+            self.range_sensor_labels.append(Label(self.north_west_frame, textvariable = self.range_sensors[i]).pack())
 
         # add encoder sensor measurements
         self.encoder_sensor_var_0 = StringVar()
@@ -314,11 +313,11 @@ class E160_graphics:
         
         
     def update_labels(self):
-        
-        self.range_sensor_var_1.set("Range 1 - Straight (m):  " + str(self.environment.robots[0].range_measurements[0]))
-        self.range_sensor_var_2.set("Range 2 - Left     (m):  " + str(self.environment.robots[0].range_measurements[1]))
-        self.range_sensor_var_3.set("Range 3 - Right    (m):  " + str(self.environment.robots[0].range_measurements[2]))
-                
+        print(self.environment.robots[0].range_measurements)
+        for i in range(CONFIG_NUM_SENSORS):
+            orientation = str(self.environment.robots[0].filter.sensor_orientation[i])[:4]
+            self.range_sensors[i].set("Range "+str(i)+" - "+orientation+" (m):  " + str(self.environment.robots[0].range_measurements[i]))
+           
         self.encoder_sensor_var_0.set("Encoder 0 (ticks L):  " + str(self.environment.robots[0].encoder_measurements[0]))
         self.encoder_sensor_var_1.set("Encoder 1 (ticks R):  " + str(self.environment.robots[0].encoder_measurements[1]))
 
