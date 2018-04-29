@@ -104,7 +104,7 @@ class E160_graphics:
         self.range_sensor_labels = []
         # add range sensor measurements
         for i in range(CONFIG_NUM_SENSORS):
-            print('rs',i)
+            print('sensor number',i)
             self.range_sensors.append(StringVar())
             self.range_sensor_labels.append(Label(self.north_west_frame, textvariable = self.range_sensors[i]).pack())
 
@@ -313,7 +313,6 @@ class E160_graphics:
         
         
     def update_labels(self):
-        print(self.environment.robots[0].range_measurements)
         for i in range(CONFIG_NUM_SENSORS):
             orientation = str(self.environment.robots[0].filter.sensor_orientation[i])[:4]
             self.range_sensors[i].set("Range "+str(i)+" - "+orientation+" (m):  " + str(self.environment.robots[0].range_measurements[i]))
