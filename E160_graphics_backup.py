@@ -207,9 +207,9 @@ class E160_graphics:
         
     def draw_wheel_well(self, robot):
         wheel_well_points = [robot.wheel_radius*1.1,robot.radius*1.1,
-                     -robot.wheel_radius*1.1,robot.radius*1.1,
-                     -robot.wheel_radius*1.1,robot.radius*0.8,
-                     robot.wheel_radius*1.1,robot.radius*0.8]
+                            -robot.wheel_radius*1.1,robot.radius*1.1,
+                            -robot.wheel_radius*1.1,robot.radius*0.8,
+                            robot.wheel_radius*1.1,robot.radius*0.8]
         
         wheel_well_points = self.rotate_points(wheel_well_points, robot.state.theta)
         wheel_well_points = self.translate_points(wheel_well_points, robot.state.x, robot.state.y)

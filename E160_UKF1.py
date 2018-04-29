@@ -7,7 +7,7 @@ from scipy.stats import norm
 from scipy.linalg import sqrtm
 
 
-INITIAL_ERROR = np.array([0.0, 0, 0]).reshape((3,1))
+INITIAL_ERROR = np.array([CONFIG_X_ERROR, CONFIG_Y_ERROR, CONFIG_THETA_ERROR]).reshape((3,1))
 
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
@@ -167,7 +167,7 @@ class E160_UKF:
                                        self.normalize_angle(theta + sigma_offsets[i][2]),
                                        self.mean_weights[i])
       p = particles[i]
-      print('Particle','i',p.x,p.y,p.heading)
+      #print('Particle','i',p.x,p.y,p.heading)
     return particles
 
   # step 3 in Probabilistic Robotics
@@ -225,7 +225,7 @@ class E160_UKF:
       expected_measurements_m[i][RIGHT_SENSOR_ID] = min_dist_right
       expected_measurements_m[i][STRAIGHT_SENSOR_ID] = min_dist_straight
       expected_measurements_m[i][LEFT_SENSOR_ID] = min_dist_left
-    print(expected_measurements_m)
+    #print(expected_measurements_m)
 
     return expected_measurements_m
 
@@ -276,10 +276,10 @@ class E160_UKF:
     far_readings_ndx = np.ones(self.num_sensors, dtype=np.bool_)
     exp_far_readings_ndx = np.zeros(self.num_sensors, dtype=np.bool_)
 
-    far_readings_ndx[sensor_readings[:,0] == self.FAR_READING] = False
+    far_readings_ndx[sensor_readings[:,0] >= self.FAR_READING] = False
 
     for i in range(self.numParticles):
-      exp_far_readings_ndx[expected_measurements_m[i,:] == self.FAR_READING] = True
+      exp_far_readings_ndx[expected_measurements_m[i,:] >= self.FAR_READING] = True
       exp_far_readings_ndx[abs(expected_measurements_m[i,:] - sensor_readings)[:,0] > CONFIG_TOO_BIG_SENSOR_ERROR] = True
       
     # combines knowledge from sensors and expected measurements
@@ -313,7 +313,7 @@ class E160_UKF:
 
     # convert sensor readings to distances (with max of 1.5m)
     sensor_readings = np.array([min(reading, self.FAR_READING) for reading in sensor_readings]).reshape((self.num_sensors,1))
-    print(sensor_readings)
+    #print(sensor_readings)
     # step 2 - identify sigma points at t-1
     self.particles = self.GenerateParticles(self.state, self.variance)
 
@@ -323,9 +323,9 @@ class E160_UKF:
     # step 4, 5 - calculate weighted means and covariance of sigma points
     # this step is already complete in step 1 since all weights are equal
     var1 = self.variance
-    print('pre pre',self.state)
+    #print('pre pre',self.state)
     self.state, self.variance = self.PredictMeanAndCovariance()
-    print('post pre',self.state)
+    #print('post pre',self.state)
     # step 6 - identify sigma points at time t using predicted mean, covariance
     self.particles = self.GenerateParticles(self.state, self.variance)
 
