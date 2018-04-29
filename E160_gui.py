@@ -21,7 +21,6 @@ def main():
         if not graphics.update():
             break
         
-        input()
         # update robots
         environment.update_robots(deltaT)
         
