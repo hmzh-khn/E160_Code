@@ -16,8 +16,7 @@ CONFIG_FILTER = CONFIG_UNSCENTED_KALMAN_FILTER
 TEST_PATH_1 = [E160_state(0,0,0), 
                E160_state(0.25,0,0), 
                E160_state(-0.3,0, math.pi),
-               E160_state(-0.2,0.5, math.pi),
-               E160_state(-0.1,-0.1, math.pi)]
+               E160_state(0.1,-0.1, math.pi)]
 
 INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
                       E160_state(10.25, 9, CONFIG_QUARTER_TURN),
@@ -216,7 +215,7 @@ class E160_robot:
         # localize with particle filter
         self.state_est = self.filter.LocalizeEst(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
         # self.state_est = self.state_odo
-        self.state_ctrl = self.state_est
+        self.state_ctrl = self.state_odo
         # self.state_est
 
         # to out put the true location for display purposes only. 
