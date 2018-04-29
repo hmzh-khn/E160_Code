@@ -101,7 +101,7 @@ class E160_robot:
         self.robot_id = robot_id
         self.manual_control_left_motor = 0
         self.manual_control_right_motor = 0
-        self.file_name = 'Log/'+str(CONFIG_COURSE) + '_' + str(CONFIG_NUM_SENSORS) + 'Sensors_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
+        self.file_name = 'Log/'+str(CONFIG_COURSE) +'_' + CONFIG_ROBOT_MODE + '_' + str(CONFIG_NUM_SENSORS) + 'Sensors_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
 
         self.make_headers()
         # self.encoder_resolution = 1440
