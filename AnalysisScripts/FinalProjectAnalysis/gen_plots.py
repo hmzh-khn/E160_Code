@@ -14,13 +14,26 @@ import pandas as pd
 from scipy.stats import linregress
 import math
 
+CONVERT_M_TO_CM = 100.0
+
 PATH_HEAD = "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/Log/"
 
 # CHANGE TO FILE NAMES OF ACTUAL TESTS
-FILE = PATH_HEAD + "Bot0_18-04-28 20.11.42.txt"
+FILE = PATH_HEAD + "SMALL_COURSE_HARDWARE MODE_3Sensors_18-04-28 21.56.52.txt"
 data = pd.read_csv(FILE, sep=" ")
 
 # MAYBE NEED SOME DIRECTION FLIPPING FOR SIMULATION FILES
+data['state_odo_x'] = CONVERT_M_TO_CM * data['state_odo_x']
+data['state_odo_y'] = CONVERT_M_TO_CM * data['state_odo_y']
+data['state_odo_theta'] = data['state_odo_theta']
+data['pf_state_x'] = CONVERT_M_TO_CM * data['pf_state_x']
+data['pf_state_y'] = CONVERT_M_TO_CM * data['pf_state_y']
+data['pf_state_theta'] = data['pf_state_theta']
+
+dist_error = np.sqrt(data['est_error_x']**2 )
+dist_error = np.sqrt(data['est_error_y']**2)
+distance_rms = np.sqrt(np.mean(dist_error**2))
+print('Translation RMS - ', distance_rms)
 
 def normalize_angle(theta):
   '''
