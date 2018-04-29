@@ -92,7 +92,8 @@ class E160_robot:
         self.robot_id = robot_id
         self.manual_control_left_motor = 0
         self.manual_control_right_motor = 0
-        self.file_name = 'Log/Bot' + str(self.robot_id) + '_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
+        self.file_name = 'Log/'+str(CONFIG_COURSE) + '_' + str(CONFIG_NUM_SENSORS) + 'Sensors_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
+
         self.make_headers()
         # self.encoder_resolution = 1440
         
@@ -178,6 +179,8 @@ class E160_robot:
             self.filter = self.PF
         elif CONFIG_FILTER == CONFIG_UNSCENTED_KALMAN_FILTER:
             self.filter = self.UKF
+        #self.file_name = 'Log/Bot' + str(self.robot_id) + '_' + datetime.datetime.now().replace(microsecond=0).strftime('%y-%m-%d %H.%M.%S') + '.txt'
+                
 
     def change_headers(self):
         self.make_headers()

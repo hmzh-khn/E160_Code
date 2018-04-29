@@ -17,7 +17,7 @@ import math
 PATH_HEAD = "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/Log/"
 
 # CHANGE TO FILE NAMES OF ACTUAL TESTS
-FILE = PATH_HEAD + "Bot0_18-04-27 22.03.35.txt"
+FILE = PATH_HEAD + "Bot0_18-04-28 20.11.42.txt"
 data = pd.read_csv(FILE, sep=" ")
 
 # MAYBE NEED SOME DIRECTION FLIPPING FOR SIMULATION FILES
