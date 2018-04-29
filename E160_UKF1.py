@@ -7,7 +7,7 @@ from scipy.stats import norm
 from scipy.linalg import sqrtm
 
 
-INITIAL_ERROR = np.array([0.1, 0, 0]).reshape((3,1))
+INITIAL_ERROR = np.array([0.0, 0, 0]).reshape((3,1))
 
 CONFIG_ROBOT_RAD_M = 0.147 / 2
 CONFIG_WHEEL_RAD_M = 0.034
@@ -166,6 +166,8 @@ class E160_UKF:
                                        y + sigma_offsets[i][0] * np.sin(theta) + sigma_offsets[i][1] * np.cos(theta),
                                        self.normalize_angle(theta + sigma_offsets[i][2]),
                                        self.mean_weights[i])
+      p = particles[i]
+      print('Particle','i',p.x,p.y,p.heading)
     return particles
 
   # step 3 in Probabilistic Robotics
@@ -223,6 +225,7 @@ class E160_UKF:
       expected_measurements_m[i][RIGHT_SENSOR_ID] = min_dist_right
       expected_measurements_m[i][STRAIGHT_SENSOR_ID] = min_dist_straight
       expected_measurements_m[i][LEFT_SENSOR_ID] = min_dist_left
+    print(expected_measurements_m)
 
     return expected_measurements_m
 
@@ -301,14 +304,16 @@ class E160_UKF:
         sensor_readings([float, float, float]): sensor readings from range fingers
       Return:
         None'''
-
+    if(abs(encoder_measurements[0] - last_encoder_measurements[0]) > 1000):
+      encoder_measurements = [0,0]
+      last_encoder_measurements = [0,0]
     if self.delay % 15 == 16:
       raise Exception('fifth step')
     self.delay += 1
 
     # convert sensor readings to distances (with max of 1.5m)
     sensor_readings = np.array([min(reading, self.FAR_READING) for reading in sensor_readings]).reshape((self.num_sensors,1))
-
+    print(sensor_readings)
     # step 2 - identify sigma points at t-1
     self.particles = self.GenerateParticles(self.state, self.variance)
 
@@ -318,8 +323,9 @@ class E160_UKF:
     # step 4, 5 - calculate weighted means and covariance of sigma points
     # this step is already complete in step 1 since all weights are equal
     var1 = self.variance
+    print('pre pre',self.state)
     self.state, self.variance = self.PredictMeanAndCovariance()
-
+    print('post pre',self.state)
     # step 6 - identify sigma points at time t using predicted mean, covariance
     self.particles = self.GenerateParticles(self.state, self.variance)
 
