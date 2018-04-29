@@ -67,6 +67,36 @@ class E160_environment:
                 x2 = (point2[0] - m2in/2) * in2m
                 y2 = (point2[1] + m2in/2) * in2m
                 self.walls.append(E160_wall([x1,y1,x2,y2],orientStr))
+        elif(CONFIG_COURSE == SMALL_COURSE):
+            indoor_points = [(0,0),
+            (36,0), #1
+            (36, -35.5),
+            (32.5,-35.5),
+            (32.5, -36), #4
+            (0, -36)]
+            indoor_walls = [(0,1),(1,2),(2,3),(3,4),(4,5),(5,0)]
+            for wall in indoor_walls:
+                point1 = indoor_points[wall[0]]
+                point2 = indoor_points[wall[1]]
+                orientStr = "horizontal"
+                if point1[0] > point2[0]:
+                    pass
+                elif point1[0] == point2[0]:
+                    orientStr = "vertical"
+                    if point1[1] < point2[1]:
+                        temp = point1
+                        point1 = point2
+                        point2 = temp
+                else:
+                    temp = point1
+                    point1 = point2
+                    point2 = temp
+                x1 = (point1[0] - m2in/2) * in2m
+                y1 = (point1[1] + m2in/2) * in2m
+                x2 = (point2[0] - m2in/2) * in2m
+                y2 = (point2[1] + m2in/2) * in2m
+                self.walls.append(E160_wall([x1,y1,x2,y2],orientStr))
+            
         else:
             self.walls.append(E160_wall([x*in2m for x in [-19, 8.5, -19, -10.5]],"vertical"))
             self.walls.append(E160_wall([x*in2m for x in [-19, 8.5, -22, 8.5]],"horizontal"))

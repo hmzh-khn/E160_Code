@@ -29,6 +29,13 @@ INDOOR_TEST_PATH_1 = [E160_state(10.25, 9, 0),
                       E160_state(38.5, 11.5, 5*CONFIG_EIGHTH_TURN),
                       E160_state(60.5, 12, CONFIG_HALF_TURN),]
 
+SMALL_COURSE_PATH = [E160_state(10.25, 9, 0),
+                      E160_state(10.25, 9, CONFIG_QUARTER_TURN),
+                      E160_state(13.5, 21, CONFIG_QUARTER_TURN),
+                      E160_state(25, 25, 3*CONFIG_EIGHTH_TURN),
+                      E160_state(25, 25, 5*CONFIG_EIGHTH_TURN),
+                      E160_state(28, 22.125, 5*CONFIG_EIGHTH_TURN),]
+
 DEBUG_FORWARD_PATH_1 = [E160_state(10.25, 34, math.pi/2)]
                       # E160_state(13.5, 34, CONFIG_QUARTER_TURN),
                       # E160_state(13.5, 34, 3*CONFIG_EIGHTH_TURN),
@@ -41,7 +48,10 @@ DEBUG_FORWARD_PATH_1 = [E160_state(10.25, 34, math.pi/2)]
 
 STD_PATH = TEST_PATH_1#[E160_state(36*CONFIG_IN_TO_M,0,0)]
 
+
 CONFIG_ROBOT_PATH = INDOOR_TEST_PATH_1
+if(CONFIG_COURSE == SMALL_COURSE):
+    CONFIG_ROBOT_PATH = SMALL_COURSE_PATH
 [s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in CONFIG_ROBOT_PATH]
 
 
@@ -51,7 +61,7 @@ class E160_robot:
         self.environment = environment
 
         # state estimation and destination
-        if CONFIG_COURSE != INDOOR_COURSE and CONFIG_COURSE != EASY_INDOOR :
+        if CONFIG_COURSE != INDOOR_COURSE and CONFIG_COURSE != EASY_INDOOR and CONFIG_COURSE != SMALL_COURSE:
             x0, y0, t0 = 0, 0, 0
             self.state_est = E160_state()
             self.state_est.set_state(0,0,0)
@@ -133,7 +143,7 @@ class E160_robot:
 
         # path tracking
         self.path_tracker = None
-        if CONFIG_COURSE == INDOOR_COURSE or CONFIG_COURSE == EASY_INDOOR:
+        if CONFIG_COURSE == INDOOR_COURSE or CONFIG_COURSE == EASY_INDOOR or CONFIG_COURSE == SMALL_COURSE:
             self.path = CONFIG_ROBOT_PATH
         else:
             self.path = STD_PATH
@@ -215,7 +225,7 @@ class E160_robot:
         # localize with particle filter
         self.state_est = self.filter.LocalizeEst(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
         # self.state_est = self.state_odo
-        self.state_ctrl = self.state_odo
+        self.state_ctrl = self.state_est
         # self.state_est
 
         # to out put the true location for display purposes only. 
