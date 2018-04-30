@@ -14,27 +14,6 @@ import pandas as pd
 from scipy.stats import linregress
 import math
 
-CONVERT_M_TO_CM = 100.0
-
-PATH_HEAD = "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/Log/"
-
-# CHANGE TO FILE NAMES OF ACTUAL TESTS
-FILE = PATH_HEAD + "SMALL_COURSE_HARDWARE MODE_3Sensors_18-04-28 21.56.52.txt"
-data = pd.read_csv(FILE, sep=" ")
-
-# MAYBE NEED SOME DIRECTION FLIPPING FOR SIMULATION FILES
-data['state_odo_x'] = CONVERT_M_TO_CM * data['state_odo_x']
-data['state_odo_y'] = CONVERT_M_TO_CM * data['state_odo_y']
-data['state_odo_theta'] = data['state_odo_theta']
-data['pf_state_x'] = CONVERT_M_TO_CM * data['pf_state_x']
-data['pf_state_y'] = CONVERT_M_TO_CM * data['pf_state_y']
-data['pf_state_theta'] = data['pf_state_theta']
-
-dist_error = np.sqrt(data['est_error_x']**2 )
-dist_error = np.sqrt(data['est_error_y']**2)
-distance_rms = np.sqrt(np.mean(dist_error**2))
-print('Translation RMS - ', distance_rms)
-
 def normalize_angle(theta):
   '''
   Returns an angle in range (-pi, pi]
@@ -44,73 +23,159 @@ def normalize_angle(theta):
   return out_angle - 2 * math.pi * greater_than_pi
 
 
-# example of printing path - translation
-plt.figure()
-plt.title('robot translational path odometry v. ukf')
-plt.plot(data['state_odo_x'], data['state_odo_y'], 'bo', label='odometry position')
-plt.plot(data['pf_state_x'], data['pf_state_y'], 'rx', label='ukf position')
-plt.xlabel('x pos (cm)')
-plt.ylabel('y pos (cm)')
-# plt.xlim(-30,150)
-# plt.ylim(-100,45)
-plt.legend()
+CONVERT_M_TO_CM = 100.0
+
+IS_HARD = False
+PATH_HEAD = "/Users/hikhan/Desktop/Autonomous Robotics Navigation/E160_Code/Log/"
+
+files = ["SMALL_COURSE_Noise_Testing_0.05_3_Sensors_18-04-29 10.21.49.txt",
+         "SMALL_COURSE_Noise_Testing_0.1_3_Sensors_18-04-29 10.22.40.txt",
+         "SMALL_COURSE_Noise_Testing_0.15_3_Sensors_18-04-29 10.23.21.txt",
+         "SMALL_COURSE_Noise_Testing_0.2_3_Sensors_18-04-29 10.24.00.txt",
+         "SMALL_COURSE_Noise_Testing_0.25_3_Sensors_18-04-29 10.25.00.txt"]
+
+for i in files:
+  # CHANGE TO FILE NAMES OF ACTUAL TESTS
+  SIM_FILE = PATH_HEAD + i
+  # SIM_CTRL_FILE = PATH_HEAD + "SMALL_COURSE_3Sensors_UKFControl_18-04-28 21.31.45.txt"
+
+  HARD_FILE = None
+  hard_data = None
+
+  if IS_HARD:
+    HARD_FILE = PATH_HEAD + "SMALL_COURSE_HARDWARE MODE_3Sensors_UKF_CONTROL_18-04-28 21.54.45.txt"
+    # HARD_CTRL_FILE = PATH_HEAD + "SMALL_COURSE_HARDWARE MODE_3Sensors_UKF_CONTROL_18-04-28 21.54.45.txt"
+
+  sim_data = pd.read_csv(SIM_FILE, sep=" ")
+  # sim_ctrl_data = pd.read_csv(SIM_CTRL_FILE sep=" ")
+  for i in range(len(sim_data)):
+    sim_data['est_error_theta'][i] = normalize_angle(sim_data['est_error_theta'][i])
+
+  if IS_HARD:
+    hard_data = pd.read_csv(HARD_FILE, sep=" ")
+    for i in range(len(sim_data)):
+      hard_data['est_error_theta'][i] = normalize_angle(hard_data['est_error_theta'][i])
+  # hard_ctrl_data = pd.read_csv(HARD_CTRL_FILE, sep=" ")
 
 
+  # MAYBE NEED SOME DIRECTION FLIPPING FOR SIMULATION FILES
+  sim_data['state_odo_x'] = CONVERT_M_TO_CM * sim_data['state_odo_x']
+  sim_data['state_odo_y'] = CONVERT_M_TO_CM * sim_data['state_odo_y']
+  sim_data['variance11'] = -CONVERT_M_TO_CM * sim_data['variance11']
+  sim_data['state_odo_theta'] = sim_data['state_odo_theta']
+  sim_data['pf_state_x'] = CONVERT_M_TO_CM * sim_data['pf_state_x']
+  sim_data['pf_state_y'] = CONVERT_M_TO_CM * sim_data['pf_state_y']
+  sim_data['pf_state_theta'] = sim_data['pf_state_theta']
+
+  if IS_HARD:
+    hard_data['state_odo_x'] = CONVERT_M_TO_CM * hard_data['state_odo_x']
+    hard_data['state_odo_y'] = CONVERT_M_TO_CM * hard_data['state_odo_y']
+    hard_data['state_odo_theta'] = hard_data['state_odo_theta']
+    hard_data['pf_state_x'] = CONVERT_M_TO_CM * hard_data['pf_state_x']
+    hard_data['pf_state_y'] = CONVERT_M_TO_CM * hard_data['pf_state_y']
+    hard_data['pf_state_theta'] = hard_data['pf_state_theta']
+
+
+  dist_sim_error_x = np.sqrt(sim_data['est_error_x']**2)
+  dist_sim_error_y = np.sqrt(sim_data['est_error_y']**2)
+  dist_sim_error_theta = np.sqrt(sim_data['est_error_theta']**2)
+  distance_sim_rms_x = np.sqrt(np.mean(dist_sim_error_x**2))
+  distance_sim_rms_y = np.sqrt(np.mean(dist_sim_error_y**2))
+  distance_sim_rms_theta = np.sqrt(np.mean(dist_sim_error_theta**2))
+  # print('Translation sim RMS x,y - ', distance_sim_rms_x, distance_sim_rms_y)
+  print(distance_sim_rms_theta)
+
+  if IS_HARD:
+    dist_hard_error_x = np.sqrt(hard_data['est_error_x']**2 )
+    dist_hard_error_y = np.sqrt(hard_data['est_error_y']**2)
+    distance_hard_rms_x = np.sqrt(np.mean(dist_hard_error_x**2))
+    distance_hard_rms_y = np.sqrt(np.mean(dist_hard_error_y**2))
+    print('Translation sim RMS x,y - ', distance_hard_rms_x, distance_hard_rms_y)
+
+ 
 # example of printing path - translation
-plt.figure()
-plt.title('robot angular path odometry v. ukf')
-plt.plot(data['state_odo_theta'], 'bo', label='odometry angle')
-plt.plot(data['pf_state_theta'], 'rx', label='ukf angle')
-plt.xlabel('sample number')
-plt.ylabel('angle (rad)')
-# plt.xlim(-30,150)
-plt.ylim(-np.pi, np.pi)
-plt.legend()
+# plt.figure()
+# plt.title('robot translational path odometry v. ukf')
+# plt.plot(sim_data['state_odo_x'], sim_data['state_odo_y'], 'bo', label='sim odometry position')
+# plt.plot(sim_data['pf_state_x'], sim_data['pf_state_y'], 'rx', label='sim ukf position')
+# if IS_HARD:
+#   plt.plot(hard_data['state_odo_x'], hard_data['pf_state_y'], 'go', label='hardware odometry position')
+#   plt.plot(hard_data['pf_state_x'], hard_data['pf_state_y'], 'cx', label='hardware ukf position')
+# plt.xlabel('x pos (cm)')
+# plt.ylabel('y pos (cm)')
+# # plt.xlim(-30,150)
+# # plt.ylim(-100,45)
+# plt.legend()
+
+
+  # example of printing path - translation
+  # plt.figure()
+  # plt.title('robot angular path odometry v. ukf')
+  # plt.plot(sim_data['state_odo_theta'], 'bo', label='sim odometry angle')
+  # plt.plot(sim_data['pf_state_theta'], 'rx', label='sim ukf angle')
+  # if IS_HARD:
+  #   plt.plot(hard_data['state_odo_theta'], 'go', label='hardware odometry angle')
+  #   plt.plot(hard_data['pf_state_theta'], 'cx', label='hardware ukf angle')
+  # plt.xlabel('sample number')
+  # plt.ylabel('angle (rad)')
+  # # plt.xlim(-30,150)
+  # plt.ylim(-np.pi, np.pi)
+  # plt.legend()
 
 
 # example of printing position error
-plt.figure()
-plt.title('robot translational path distance error odometry v. ukf')
-plt.plot(data['est_error_x'], 'bo', label='error in x')
-plt.plot(data['est_error_y'], 'rx', label='error in y')
-plt.xlabel('sample number')
-plt.ylabel('distance error (m)')
-# plt.xlim(-30,150)
-# plt.ylim(-np.pi, np.pi)
-plt.legend()
+# plt.figure()
+# plt.title('robot translational path distance error odometry v. ukf')
+# plt.plot(sim_data['est_error_x'], 'bo', label='sim error in x')
+# plt.plot(sim_data['est_error_y'], 'rx', label='sim error in y')
+# if IS_HARD:
+#   plt.plot(hard_data['est_error_x'], 'go', label='hardware error in x')
+#   plt.plot(hard_data['est_error_y'], 'cx', label='hardware error in y')
+# plt.xlabel('sample number')
+# plt.ylabel('distance error (m)')
+# # plt.xlim(-30,150)
+# # plt.ylim(-np.pi, np.pi)
+# plt.legend()
 
 
-# example of printing angular error
-plt.figure()
-plt.title('robot angular path error odometry v. ukf')
-plt.plot(data['est_error_theta'], 'bo', label='error in theta')
-plt.xlabel('sample number')
-plt.ylabel('angle error (rad)')
-# plt.xlim(-30,150)
-# plt.ylim(-np.pi, np.pi)
-plt.legend()
+  # example of printing angular error
+  # plt.figure()
+  # plt.title('robot angular path error odometry v. ukf')
+  # plt.plot(sim_data['est_error_theta'], 'bo', label='sim error in theta')
+  # if IS_HARD:
+  #   plt.plot(hard_data['est_error_theta'], 'gx', label='hardware error in theta')
+
+  # plt.xlabel('sample number')
+  # plt.ylabel('angle error (rad)')
+  # # plt.xlim(-30,150)
+  # # plt.ylim(-np.pi, np.pi)
+  # plt.legend()
 
 
-# example of printing translational variance
-plt.figure()
-plt.title('robot translational path variance ukf')
-plt.plot(data['variance00'], 'bo', label='variance in x w.r.t. x')
-plt.plot(data['variance11'], 'rx', label='variance in y w.r.t. y')
-plt.xlabel('sample number')
-plt.ylabel('distance variance (m^2)')
-# plt.xlim(-30,150)
-# plt.ylim(-np.pi, np.pi)
-plt.legend()
+  # example of printing translational variance
+  # plt.figure()
+  # plt.title('robot translational path variance ukf')
+  # plt.plot(sim_data['variance00'], 'bo', label='sim variance in x')
+  # plt.plot(sim_data['variance11'], 'rx', label='sim variance in y ')
+  # if IS_HARD:
+  #   plt.plot(hard_data['variance00'], 'go', label='hardware variance in x')
+  #   plt.plot(hard_data['variance11'], 'cx', label='hardware variance in y')
+  # plt.xlabel('sample number')
+  # plt.ylabel('distance variance (m^2)')
+  # # plt.xlim(-30,150)
+  # # plt.ylim(-np.pi, np.pi)
+  # plt.legend()
 
-plt.figure()
-plt.title('robot angular path variance ukf')
-plt.plot(data['variance22'], 'bo', label='variance in theta w.r.t. theta')
-# plt.plot(data['variance11'], 'rx', label='variance in y w.r.t. y')
-plt.xlabel('sample number')
-plt.ylabel('angular variance (rad^2)')
-# plt.xlim(-30,150)
-# plt.ylim(-np.pi, np.pi)
-plt.legend()
+  # plt.figure()
+  # plt.title('robot angular path variance ukf')
+  # plt.plot(sim_data['variance22'], 'bo', label='sim variance in theta')
+  # if IS_HARD:
+  #   plt.plot(hard_data['variance22'], 'go', label='hardware variance in theta')
+  # plt.xlabel('sample number')
+  # plt.ylabel('angular variance (rad^2)')
+  # # plt.xlim(-30,150)
+  # # plt.ylim(-np.pi, np.pi)
+  # plt.legend()
 
 
 # plt.figure()
@@ -331,5 +396,5 @@ plt.legend()
 # plt.legend()
 
 
-plt.show()
+  plt.show()
 
