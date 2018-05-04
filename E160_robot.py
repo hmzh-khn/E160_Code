@@ -56,6 +56,9 @@ if(CONFIG_COURSE == SMALL_COURSE):
 [s.set_state((CONFIG_IN_TO_M * s.x) - 0.5, - (CONFIG_IN_TO_M * s.y) + 0.5, s.theta) for s in CONFIG_ROBOT_PATH]
 
 
+CONFIG_DISTANCE_THRESHOLD_M = 0.03
+CONFIG_ANGLE_THRESHOLD_M = 0.05
+
 class E160_robot:
 
     def __init__(self, environment, address, robot_id):
@@ -194,7 +197,14 @@ class E160_robot:
         # motion planning
         self.MP = E160_MP(environment, self.state_odo, self.radius)
         self.build_path([0], self.MP.node_list)
-        self.replan_path = False
+        self.replan_path = True
+
+        self.state_curr_dest = E160_state()
+        self.state_curr_dest.set_state(self.state_est.x,
+                                       self.state_est.y,
+                                       self.state_est.theta)
+
+        self.path_counter = 0
 
     def change_headers(self):
         self.make_headers()
@@ -271,7 +281,8 @@ class E160_robot:
         self.state_error = self.state_curr_dest-self.state_est
         error = self.state_error
 
-        if (self.state_est.xydist(self.state_curr_dest) < self.min_ptrack_dist_error and abs(error.theta) < self.min_ptrack_ang_error): 
+        if (self.state_est.xydist(self.state_curr_dest) < CONFIG_DISTANCE_THRESHOLD_M 
+            and abs(error.theta) < CONFIG_ANGLE_THRESHOLD_M): 
             self.point_tracked = True
             self.state_curr_dest = self.trajectory[self.path_counter]
             if self.path_counter < len(self.trajectory) - 1:
@@ -348,7 +359,7 @@ class E160_robot:
                 R, L = self.lab4_controller(range_measurements)
 
             elif CONFIG_LAB_NUMBER == 5:
-                pass
+                R, L = self.lab5_controller(range_measurements)
 
             elif CONFIG_LAB_NUMBER == 6:
                 R, L = self.lab4_controller(range_measurements)
@@ -606,6 +617,33 @@ class E160_robot:
             else:
                 desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
 
+        return desiredWheelSpeedR, desiredWheelSpeedL
+
+    def lab5_controller(self, range_measurements):
+        if self.environment.control_mode == "MANUAL CONTROL MODE":
+            desiredWheelSpeedR = self.manual_control_right_motor
+            desiredWheelSpeedL = self.manual_control_left_motor
+            
+        elif self.environment.control_mode == "AUTONOMOUS CONTROL MODE":
+            self.motion_plan()
+
+            self.track_trajectory()
+            self.point_tracked = False
+            self.state_des = self.state_curr_dest
+            
+            # path = self.trajectory
+            print('path', self.trajectory)
+            # self.path_tracker = self.create_path_tracker(self.trajectory)
+
+            # desiredWheelSpeedR, desiredWheelSpeedL = (0, 0)
+
+            # if self.is_path_tracked:
+                # self.path_current_pos = 0
+            # else:
+                # desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
+
+        desiredWheelSpeedR, desiredWheelSpeedL = self.point_tracker_control()
+        # print(desiredWheelSpeedR, desiredWheelSpeedL)
         return desiredWheelSpeedR, desiredWheelSpeedL
 
     ###### END LAB CONTROLLERS ######

@@ -34,6 +34,8 @@ class E160_state:
 
     def __str__(self):
         return " ".join([str(self.x), str(self.y), str(self.theta)])
+    def __repr__(self):
+        return "[" + str(self.x) + " " + str(self.y) + " " + str(self.theta) + "]"
 
     def normalize_angle(self, theta):
         '''
@@ -51,3 +53,12 @@ class E160_state:
         if theta < -math.pi:
             theta = 2*math.pi + theta
         return theta
+
+    def __add__(self, other):
+        return E160_state(self.x + other.x, self.y + other.y, self.normalize_angle(self.theta + other.theta))
+
+    def __sub__(self, other):
+        return E160_state(self.x - other.x, self.y - other.y, self.normalize_angle(self.theta - other.theta))
+
+    def xydist(self, other):
+        return math.sqrt((self.x-other.x)**2 + (self.y-other.y)**2)

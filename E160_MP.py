@@ -27,6 +27,7 @@ class E160_MP:
        self.y_grid_cell_size = self.max_x/self.num_y_cell
        self.MAX_NODE_NUMBER = 10000
        self.expansion_range = 0.4
+       print('radius', robot_radius)
        self.robot_radius = robot_radius
 
        start_node = self.Node(start_robot_state.x, start_robot_state.y)
@@ -39,17 +40,16 @@ class E160_MP:
         self.num_nodes = 0
 
         # Add Code: set the variable self.start_node and add it to the PRM
-        
-        
-        
-        
+        # set start node, no parent, index 0, no children yet, add start node
+        self.start_node = self.Node(start_robot_state.x, start_robot_state.y)
+        self.addNode(self.start_node)
         
         return self.MotionPlanner(goal_node)
 
     def addNode(self, n):
         '''Add node n in self.cell_grid'''
         # print self.cell_grid.keys()
-        col, row = self.getCellNumbder(n)
+        col, row = self.getCellNumber(n)
         if (col, row) in self.cell_grid:
             self.cell_grid[col, row].append(n)
         else:
@@ -58,7 +58,7 @@ class E160_MP:
         self.node_list.append(n)
         self.num_nodes += 1 
 
-    def getCellNumbder(self, n):
+    def getCellNumber(self, n):
         '''Calculate x and y indices for a given node '''
         col = math.floor((n.x - self.min_x)/self.x_grid_cell_size )
         row = math.floor((n.y - self.min_y)/self.y_grid_cell_size )
@@ -70,7 +70,7 @@ class E160_MP:
                 Node '''
         cell_length = len(self.cell_grid.keys())
         random_cell_num = int(random.random() * cell_length)
-        random_key = self.cell_grid.keys()[random_cell_num]
+        random_key = list(self.cell_grid.keys())    [random_cell_num]
         random_node_num = int(random.random() * len(self.cell_grid[random_key]))
         return self.cell_grid[random_key][random_node_num]
 
@@ -81,10 +81,11 @@ class E160_MP:
                 goal_node (Node): node that robot should go to
             Return:
                 [a list of node_indices] '''
+        print('running')
+
         # establish criteria for stopping
         path_found = False
         iteration = 0
-
         # trivial case: if start node connect to goal_node
         if (self.check_collision(self.start_node, goal_node, self.robot_radius) == False):
             goal_node.parent = self.start_node
@@ -97,27 +98,30 @@ class E160_MP:
         while(iteration < self.MAX_NODE_NUMBER and path_found == False):
             
             # Add Code: randomly select an expansion node
- 
-
-
-
+            expand_node = self.select_expansion_node()
 
             # Add Code: From the expansion node, create a new node
-
+            dist = random.uniform(0.05, 0.5)
+            angle = random.uniform(-math.pi, math.pi)
     
+            new_x = expand_node.x + dist * math.cos(angle)
+            new_y = expand_node.y + dist * math.sin(angle)
+            new_node = self.Node(new_x, new_y, parent=expand_node, children=[], index=self.num_nodes)
 
             # Add Code: check collision for the expansion
-            #if ...
-            
-            
-            
-            
-            
-                # Add Code: check if stopping criteria is met or not
+            if self.check_collision(expand_node, new_node, self.robot_radius):
+                # do nothing
+                pass
+            else:
+                self.addNode(new_node)
+                expand_node.children.append(new_node)
 
-                
-                
-                
+                # Add Code: check if stopping criteria is met or not
+                if self.check_collision(new_node, goal_node, self.robot_radius):
+                    goal_node.parent = new_node
+                    new_node.children.append(goal_node)
+                    self.addNode(goal_node)
+                    path_found = True 
             
             # keep track of the number of attempted expansions
             iteration += 1
@@ -146,6 +150,9 @@ class E160_MP:
         return trajectory[::-1]
 
     def check_collision(self, node1, node2, tolerance):
+        # print(node1)
+        # print(node2)
+        # print(tolerance)
         '''Check if there is a obstacle between the two node
             Args:
                 node1 (Node)
@@ -160,6 +167,8 @@ class E160_MP:
             p2 = wall.points[2:4]
             p3 = wall.points[4:6]
             p4 = wall.points[6:8]
+            print(p1, type(p1))
+            print(tolerance, type(tolerance))
             line_p1 = self.Node(p1[0] - tolerance, p1[1] + tolerance)
             line_p2 = self.Node(p2[0] + tolerance, p2[1] + tolerance)
             line_p3 = self.Node(p3[0] + tolerance, p3[1] - tolerance)
@@ -216,7 +225,7 @@ class E160_MP:
             self.x = x
             self.y = y
             self.parent = parent
-            self.children = []
+            self.children = children
             self.index = index
 
         def __str__(self):
