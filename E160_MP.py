@@ -27,7 +27,7 @@ class E160_MP:
        self.y_grid_cell_size = self.max_x/self.num_y_cell
        self.MAX_NODE_NUMBER = 10000
        self.expansion_range = 0.4
-       print('radius', robot_radius)
+       # print('radius', robot_radius)
        self.robot_radius = robot_radius
 
        start_node = self.Node(start_robot_state.x, start_robot_state.y)
@@ -167,8 +167,8 @@ class E160_MP:
             p2 = wall.points[2:4]
             p3 = wall.points[4:6]
             p4 = wall.points[6:8]
-            print(p1, type(p1))
-            print(tolerance, type(tolerance))
+            # print(p1, type(p1))
+            # print(tolerance, type(tolerance))
             line_p1 = self.Node(p1[0] - tolerance, p1[1] + tolerance)
             line_p2 = self.Node(p2[0] + tolerance, p2[1] + tolerance)
             line_p3 = self.Node(p3[0] + tolerance, p3[1] - tolerance)

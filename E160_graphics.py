@@ -283,7 +283,7 @@ class E160_graphics:
             y_des = float(self.y_des_entry.get())
             theta_des = float(self.theta_des_entry.get())
             r.state_goal.set_state(x_des,y_des,theta_des)
-            r.point_tracked = False 
+            r.replan_path = True
         
     def stop(self):
         self.environment.control_mode = "MANUAL CONTROL MODE"
@@ -387,6 +387,7 @@ class E160_graphics:
 
         # draw path
         self.draw_rrt()
+        self.draw_trajectory()
         
         # check for text input
         self.prev_typing_int = self.typing_int
