@@ -168,15 +168,56 @@ class E160_graphics:
         # draw first robot
         for r in self.environment.robots:
             self.initial_draw_robot(r)    
-     
+
+        self.drawn_rrt = False
+        self.RRT = []
+        self.path = []
   
-    
-    
+    def draw_rrt_help(self, node):
+        # print node
+        if node == None:
+            pass
+        else:
+            for child in node.children:
+                node_point = self.scale_points([node.x, node.y], self.scale)
+                child_point = self.scale_points([child.x, child.y], self.scale)
+                self.RRT.append(self.canvas.create_line(node_point, child_point, fill="gray"))
+                self.draw_rrt_help(child)
+
+    def draw_trajectory(self):
+        for r in self.environment.robots:
+            node_list = r.MP.node_list
+            for i in range(len(r.MP.traj_node_list) - 1):
+                next_node = node_list[r.MP.traj_node_list[i + 1]]
+                current_node = node_list[r.MP.traj_node_list[i]]
+
+                current_point = self.scale_points([current_node.x, current_node.y], self.scale)
+                next_point = self.scale_points([next_node.x, next_node.y], self.scale)
+                self.path.append(self.canvas.create_line(current_point, next_point, fill = "red"))    
 
     def draw_wall(self, wall):
         
         wall_points = self.scale_points(wall.points, self.scale)
         wall.poly = self.canvas.create_polygon(wall_points, fill='black')
+
+    def draw_rrt(self):
+        if self.drawn_rrt == False:
+            for branch in self.RRT:
+                self.canvas.delete(branch)
+            for path in self.path:
+                self.canvas.delete(path)
+            for r in self.environment.robots:
+                robot_mp = r.MP
+                head_node = r.MP.node_list[0]
+                self.draw_rrt_help(head_node)
+                self.draw_trajectory()
+            self.drawn_rrt = True
+        else:
+            pass
+
+            # self.canvas.create_line(head_node.x, head_node.y, )
+    # def draw_RRT(self, node, children_index):
+    #     if children_index == len()
         
     def scale_points(self, points, scale):
         scaled_points = []
@@ -343,7 +384,9 @@ class E160_graphics:
         self.draw_particles(self.environment.robots[0])
         
         # draw sensors
-
+        
+        # draw path
+        self.draw_rrt()
         
         # check for text input
         self.prev_typing_int = self.typing_int
