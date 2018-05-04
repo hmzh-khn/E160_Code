@@ -175,6 +175,7 @@ class E160_graphics:
   
     def draw_rrt_help(self, node):
         # print node
+        print(node.index, '**', node.children)
         if node == None:
             pass
         else:
