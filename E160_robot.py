@@ -203,6 +203,8 @@ class E160_robot:
         self.state_curr_dest.set_state(self.state_est.x,
                                        self.state_est.y,
                                        self.state_est.theta)
+        self.state_goal = E160_state()
+        self.state_goal.set_state(x0, y0, t0)
 
         self.path_counter = 0
 
@@ -264,7 +266,7 @@ class E160_robot:
             self.state_curr_dest = self.state_est
 
             # Set goal node
-            goal_node = E160_MP.Node(self.state_des.x, self.state_des.y)
+            goal_node = E160_MP.Node(self.state_goal.x, self.state_goal.y)
 
             # Generate path with RRT
             node_indices = self.MP.update_plan(self.state_odo, goal_node)
@@ -628,21 +630,21 @@ class E160_robot:
             self.motion_plan()
 
             self.track_trajectory()
-            self.point_tracked = False
-            self.state_des = self.state_curr_dest
+            # self.point_tracked = False
+            # self.state_des = self.state_curr_dest
             
             # path = self.trajectory
-            print('path', self.trajectory)
-            # self.path_tracker = self.create_path_tracker(self.trajectory)
+            # print('path', self.trajectory[::-1])
+            self.path_tracker = self.create_path_tracker(self.trajectory[::-1])
 
-            # desiredWheelSpeedR, desiredWheelSpeedL = (0, 0)
+            desiredWheelSpeedR, desiredWheelSpeedL = (0, 0)
 
-            # if self.is_path_tracked:
-                # self.path_current_pos = 0
-            # else:
-                # desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
+            if self.is_path_tracked:
+                self.path_current_pos = 0
+            else:
+                desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
 
-        desiredWheelSpeedR, desiredWheelSpeedL = self.point_tracker_control()
+        # desiredWheelSpeedR, desiredWheelSpeedL = self.point_tracker_control()
         # print(desiredWheelSpeedR, desiredWheelSpeedL)
         return desiredWheelSpeedR, desiredWheelSpeedL
 
