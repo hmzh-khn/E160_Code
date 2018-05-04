@@ -282,7 +282,7 @@ class E160_graphics:
             x_des = float(self.x_des_entry.get())
             y_des = float(self.y_des_entry.get())
             theta_des = float(self.theta_des_entry.get())
-            r.state_des.set_state(x_des,y_des,theta_des)
+            r.state_goal.set_state(x_des,y_des,theta_des)
             r.point_tracked = False 
         
     def stop(self):
@@ -310,8 +310,8 @@ class E160_graphics:
     def callback(self, event):
         desired_points = self.reverse_scale_points([float(event.x), float(event.y)], self.scale)
         robot = self.environment.robots[0]
-        robot.state_des.set_state(desired_points[0],desired_points[1],0)
-        print("New desired robot state", robot.state_des.x, robot.state_des.y)
+        robot.state_goal.set_state(desired_points[0],desired_points[1],0)
+        print("New desired robot state", robot.state_goal.x, robot.state_goal.y)
         
         
     def send_robot_commands(self):
@@ -384,7 +384,7 @@ class E160_graphics:
         self.draw_particles(self.environment.robots[0])
         
         # draw sensors
-        
+
         # draw path
         self.draw_rrt()
         
