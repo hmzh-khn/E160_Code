@@ -241,7 +241,7 @@ class E160_robot:
         
         # localize with particle filter
         self.state_est = self.filter.LocalizeEst(self.encoder_measurements, self.last_encoder_measurements, self.range_measurements)
-        # self.state_est = self.state_odo
+        self.state_est = self.state_odo
         self.state_ctrl = self.state_odo
         # self.state_est
 
