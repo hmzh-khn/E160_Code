@@ -15,13 +15,18 @@ def main():
     
     # set time step size in seconds
     deltaT = CONFIG_DELTA_T
+
+    first_tick = True
+
     # loop over time
     while True:
         # update graphics, but stop the thread if user stopped the gui
         if not graphics.update():
             break
         
-        raw_input()
+        if first_tick:
+            input()
+            first_tick = False
         # update robots
         environment.update_robots(deltaT)
         

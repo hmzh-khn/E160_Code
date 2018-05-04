@@ -273,7 +273,7 @@ class E160_robot:
             node_indices = self.MP.update_plan(self.state_odo, goal_node)
             print('indices', node_indices)
             self.build_path(node_indices, self.MP.node_list)
-            print('path', self.trajectory[::-1])
+            print('path', self.trajectory)
             self.replan_path = False
         else:
             pass
@@ -637,12 +637,15 @@ class E160_robot:
             # self.state_des = self.state_curr_dest
             
             # path = self.trajectory
-            self.path_tracker = self.create_path_tracker(self.trajectory[::-1])
+
+            print('path', self.trajectory)
+            self.path_tracker = self.create_path_tracker(self.trajectory)
 
             desiredWheelSpeedR, desiredWheelSpeedL = (0, 0)
 
             if self.is_path_tracked:
                 self.path_current_pos = 0
+                print('next dest', self.state_des)
             else:
                 desiredWheelSpeedR, desiredWheelSpeedL = next(self.path_tracker)
 
@@ -864,7 +867,7 @@ class E160_robot:
         self.trajectory = []
         prev_node = node_list[0]
         self.trajectory.append(E160_state(prev_node.x, prev_node.y, 0))
-        for index in range(1,len(node_indices[1:])):
+        for index in range(1,len(node_indices[1:])+1):
             current_node = node_list[node_indices[index]]
             prev_node = node_list[node_indices[index-1]]
             desired_angle = -self.normalize_angle(math.atan2(current_node.y -prev_node.y, 

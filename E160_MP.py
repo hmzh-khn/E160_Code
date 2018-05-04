@@ -117,7 +117,7 @@ class E160_MP:
                 expand_node.children.append(new_node)
 
                 # Add Code: check if stopping criteria is met or not
-                if self.check_collision(new_node, goal_node, self.robot_radius):
+                if not self.check_collision(new_node, goal_node, self.robot_radius):
                     goal_node.parent = new_node
                     new_node.children.append(goal_node)
                     self.addNode(goal_node)
